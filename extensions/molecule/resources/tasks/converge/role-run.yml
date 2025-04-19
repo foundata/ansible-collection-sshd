@@ -1,0 +1,6 @@
+
+- name: "Molecule | Converge | Include the foundata.sshd.run role"
+  ansible.builtin.include_role:
+    name: "foundata.sshd.run"
+  vars:
+    run_sshd_state: "present"

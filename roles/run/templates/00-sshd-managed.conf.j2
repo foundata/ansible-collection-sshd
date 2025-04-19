@@ -1,0 +1,12 @@
+# Ansible managed
+
+{% set merged_settings = __run_sshd_sshd_settings_defaults | combine(run_sshd_sshd_settings) %}
+{% for key, value in merged_settings.items() %}
+{% if value is sameas true %}
+{{ key }} yes
+{% elif value is sameas false %}
+{{ key }} no
+{% else %}
+{{ key }} {{ value }}
+{% endif %}
+{% endfor %}

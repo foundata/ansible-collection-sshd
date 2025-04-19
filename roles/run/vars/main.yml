@@ -1,0 +1,172 @@
+# Internal role variables and values that must NOT be overridden by the user.
+#
+# Variables defined here usually override earlier definitions due to the high
+# precedence of this file. Each variable should have a concise comment above
+# it, describing its purpose and how it fits into the role's functionality.
+
+---
+
+# List of facts used by the role (gathered on a best-effort basis if needed).
+#
+# To identify which subset a fact belongs to during development, you can use
+# the following snippet:
+#
+# - ansible.builtin.setup:
+#     gather_subset:
+#       - '!min'
+#       - '<subset_name, see parameter doc for details>'
+__run_sshd_used_facts:
+  # from subset "distribution"
+  - "distribution"
+  - "distribution_major_version"
+  - "distribution_version"
+  - "os_family"
+
+
+# List of platforms this role supports and was designed for.
+#
+# A warning will be issued if the list contains values and the role is executed
+# on an unknown (not listed) platform, but execution will continue. Example:
+#
+# - name: "Fedora" # A ansible_facts value ('distribution' or 'os_family')
+#   versions: # A ansible_facts value ('distribution_major_version' or
+#     - "all" # 'distribution_version') or "all"
+# - name: "Ubuntu"
+#   versions:
+#     - "22.04"
+#     - "24.04"
+# - name: "RedHat"
+#   versions:
+#     - "all"
+# - name: "Debian"
+#   versions:
+#     - "all"
+__run_sshd_supported_platforms:
+  - name: "Debian"
+    versions:
+      - "11"
+      - "12"
+  - name: "Fedora"
+    versions:
+      - "41"
+      - "40"
+  - name: "openSUSE Leap"
+    versions:
+      - "15.6"
+  - name: "RedHat" # includes AlmaLinux, Rocky and CentOS Stream
+    versions:
+      - "9"
+      - "10"
+  - name: "Ubuntu"
+    versions:
+      - "24.04"
+      - "22.04"
+
+
+# List of package names to be installed when run_sshd_state is
+# set to "present".
+__run_sshd_packages_install:
+  # We maintain this package list separately from the platform-specific
+  # variables in this directory because these packages likely have the same
+  # names across both supported platforms and unsupported, best-effort
+  # platforms.
+  - "openssh-server"
+
+
+# List of package names to be uninstalled when run_sshd_state is
+# set to "absent". This variable is useful when __run_sshd_packages_install
+# contains packages that are required for the managed software to function but
+# should not be removed during uninstallation, as doing so could break other
+# software. This is usually the case if there are common dependencies like
+# "curl" or "openssl" which typically should remain installed even after
+# uninstalling the software managed by this role.
+__run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
+
+
+# List of package names to be removed unconditionally before installation
+# (e.g., to prevent conflicts or resolve incompatibilities).
+__run_sshd_packages_removal:
+  [] # Remove the "[]" when adding values to this list.
+
+# FIXME description
+__run_sshd_config_file: "/etc/ssh/sshd_config"
+__run_sshd_config_include_dir: "/etc/ssh/sshd_config.d"
+__run_sshd_config_file_ansible: "{{ __run_sshd_config_include_dir }}/00-ansible.conf" # 00- prefix to make sure the file gets included early
+
+__run_sshd_config_owner: "root"
+__run_sshd_config_group: "root"
+__run_sshd_config_mode: "u=rw,g=r,o=" # 0640
+
+# FIXME description
+__run_sshd_hostkey_owner: "root"
+__run_sshd_hostkey_group: "root"
+__run_sshd_hostkey_mode: "0600"
+
+# FIXME description
+__run_sshd_servicename: "sshd.service"
+__run_sshd_executable: "/usr/sbin/sshd"
+
+# FIXME description and logic (no task yet)
+__run_sshd_environment_file: /etc/sysconfig/sshd
+__run_sshd_environment_variable:
+  - OPTIONS
+
+
+# Dictionary of curated sshd configuration defaults
+#
+# Use standard SSH option names as keys with their corresponding values.
+# For boolean values, use true/false (these will be converted to yes/no by
+# configuration tasks as needed).
+__run_sshd_sshd_settings_defaults:
+  # Security: Strong host key cryptography only
+  HostKey: "/etc/ssh/ssh_host_ed25519_key"
+   # Auditing: Record key fingerprints on login for authentication tracking
+  LogLevel: "VERBOSE"
+  # Authentication timing: Close inactive authentication attempts
+  LoginGraceTime: 30
+  # Authentication methods: Keys only, no passwords
+  PubkeyAuthentication: true
+  AuthorizedKeysFile: ".ssh/authorized_keys"
+  PermitEmptyPasswords: false
+  PasswordAuthentication: false
+  PermitRootLogin: "prohibit-password"
+  # Environment restrictions: Prevent user-controlled environment
+  # modifications (like ~/.ssh/environment, environment= options
+  # in ~/.ssh/authorized_keys, ~/.rhosts, ~/.shosts and ~/.ssh/rc files)
+  PermitUserEnvironment: false
+  IgnoreRhosts: true
+  PermitUserRC: false
+  # Security: Disable X11 forwarding (insecure even not uncommon in some
+  # environments)
+  X11Forwarding: false
+  # User experience: Show last login information
+  PrintLastLog: true
+  # Authentication services: Disable and configure Kerberos. Disabling speeds up
+  # login, settings apply if activated later:
+  # - Do not validate the password via any additional local mechanism (like
+  #   /etc/passwd)) if password authentication through Kerberos fails.
+  # - Automatically destroy the user's ticket cache file on logout.
+  # - Allow key exchange when client supports it.
+  KerberosAuthentication: false
+  KerberosOrLocalPasswd: false
+  KerberosTicketCleanup: true
+  # Authentication services: Disable and configure GSSAPI. Disabling speeds up
+  # login, settings apply if activated later:
+  # - Automatically destroy the user's credentials cache on logout.
+  # - Client must authenticate against the host service on the current hostname.
+  # - Allow key exchange when client supports it.
+  GSSAPIAuthentication: false
+  GSSAPICleanupCredentials: true
+  GSSAPIStrictAcceptorCheck: true
+  GSSAPIKeyExchange: true
+  # SFTP: Use internal sshd implementation for better security and logging
+  # (instead of a separate binary and process)
+  Subsystem: "sftp internal-sftp -f AUTHPRIV -l INFO"
+  # Cryptography: Modern algorithms only based on best practices from:
+  # - https://cipherli.st/
+  # - https://stribika.github.io/2015/01/04/secure-secure-shell.html
+  # - https://github.com/arthepsy/ssh-audit, results of ./ssh-audit.py runs
+  # - https://ssh-comparison.quendi.de/comparison/cipher.html
+  KexAlgorithms: "curve25519-sha256@libssh.org"
+  Ciphers: "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"
+  MACs: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com"

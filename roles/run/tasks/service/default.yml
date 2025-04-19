@@ -1,0 +1,11 @@
+# Services and daemons: Manage their state, configure, or create them.
+
+---
+
+- name: "Service | Default | Ensure service state: {{ __run_sshd_servicename }}"
+  ansible.builtin.service:
+    name: "{{ __run_sshd_servicename }}"
+    state: "{{ 'started' if run_sshd_service_state in ['enabled', 'running'] else 'stopped' if run_sshd_service_state == 'disabled' }}"
+    enabled: "{{ true if run_sshd_service_state == 'enabled' else false if run_sshd_service_state in ['disabled', 'running'] }}"
+  when:
+    - run_sshd_service_state != 'unmanaged'

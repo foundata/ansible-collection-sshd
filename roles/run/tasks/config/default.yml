@@ -1,0 +1,123 @@
+# Configuration: Manage settings, like adapting or creating config files.
+
+---
+
+- name: "Config | Default | Remove deprecated files"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: "absent"
+  loop:
+    - "{{ __run_sshd_config_include_dir }}/01-permitrootlogin.conf" # existing on some Red Hat environments
+    - "/etc/ssh/ssh_host_rsa_key"
+    - "/etc/ssh/ssh_host_rsa_key.pub"
+    - "/etc/ssh/ssh_host_ecdsa_key"
+    - "/etc/ssh/ssh_host_ecdsa_key.pub"
+  notify: "run_sshd: restart sshd.service"
+
+
+- name: "Config | Default | Create additional config file"
+  ansible.builtin.template:
+    src: "00-sshd-managed.conf.j2"
+    dest: "{{ __run_sshd_config_file_ansible }}"
+    owner: "{{ __run_sshd_config_owner }}"
+    group: "{{ __run_sshd_config_group }}"
+    mode: "{{ __run_sshd_config_mode }}"
+  notify: "run_sshd: restart sshd.service"
+
+
+- name: "Config | Default | Search for additional sshd config files"
+  ansible.builtin.find:
+    paths: "{{ __run_sshd_config_include_dir }}"
+    patterns: '^.+\.conf$'
+    use_regex: true
+    hidden: true
+    recurse: false
+    follow: true
+  register: __run_sshd_find_sshd_configd_result
+
+
+- name: "Config | Default | Show search results of additional sshd config files"
+  ansible.builtin.debug:
+    msg: "{{ __run_sshd_find_sshd_configd_result['files'] }}"
+    verbosity: 3
+  when:
+    - __run_sshd_find_sshd_configd_result is defined
+    - __run_sshd_find_sshd_configd_result['files'] is defined
+    - __run_sshd_find_sshd_configd_result['files'] | length > 0
+
+
+- name: "Config | Default | Get contents of additional sshd config files"
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  register: __run_sshd_slurp_sshd_configd_result
+  loop: "{{ __run_sshd_find_sshd_configd_result['files'] | map(attribute='path') }}"
+  when:
+    - __run_sshd_find_sshd_configd_result is defined
+    - __run_sshd_find_sshd_configd_result['files'] is defined
+    - __run_sshd_find_sshd_configd_result['files'] | length > 0
+
+
+- name: "Config | Default | Show contents of additional sshd config files"
+  ansible.builtin.debug:
+    msg: "{{ __run_sshd_slurp_sshd_configd_result['results'] }}"
+    verbosity: 3
+  when:
+    - __run_sshd_slurp_sshd_configd_result is defined
+    - __run_sshd_slurp_sshd_configd_result['results'] is defined
+    - __run_sshd_slurp_sshd_configd_result['results'] | length > 0
+
+
+- name: "Config | Default | Create a list of options configured in additional sshd config files"
+  ansible.builtin.set_fact:
+    __run_sshd_additional_options: |-
+      {%- set options = [] -%}
+      {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results'] | map(attribute='content') | map('b64decode') | list) -%}
+        {%- for line in file_content.splitlines() -%}
+          {%- if line | regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
+            {%- set ssh_option_name = (line | ansible.builtin.regex_replace('\s+', ' ')) -%}
+            {%- if ssh_option_name | regex_search('^Subsystem[\t ]+', multiline=false, ignorecase=true) -%}
+              {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0:2] | join('[\\t ]+') -%}
+            {%- else -%}
+              {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0] -%}
+            {%- endif -%}
+            {%- if ssh_option_name not in options -%}
+              {%- set _ = options.append(ssh_option_name) -%}
+            {%- endif -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+      {{ options }}
+  when:
+    - __run_sshd_slurp_sshd_configd_result is defined
+    - __run_sshd_slurp_sshd_configd_result['results'] is defined
+    - __run_sshd_slurp_sshd_configd_result['results'] | length > 0
+
+
+- name: "Config | Default | Show the list of options configured in additional sshd config files"
+  ansible.builtin.debug:
+    var: __run_sshd_additional_options
+    verbosity: 3
+  when:
+    - __run_sshd_additional_options is defined
+    - __run_sshd_additional_options | length > 0
+
+
+- name: "Config | Default | Ensure Include directive exists in sshd_config"
+  ansible.builtin.lineinfile:
+    path: "{{ __run_sshd_config_file }}"
+    line: "Include {{ __run_sshd_config_include_dir }}/*.conf"
+    state: "present"
+    validate: "{{ __run_sshd_executable }} -t -f %s"
+  notify: "run_sshd: restart sshd.service"
+
+
+# Remember: It is not possible to overwrite values in the sshd configuration,
+# first occurrence wins.
+- name: "Config | Default | Ensure additional config options take precedence by commenting out duplicates in main config"
+  ansible.builtin.replace:
+    path: "{{ __run_sshd_config_file }}"
+    # will search for something like HostKey|LogLevel|LoginGraceTime| [...] Subsystem[\\t ]+sftp|KexAlgorithms
+    regexp: '^([\t ]+)?({{ __run_sshd_additional_options | join("|") }})(.*)'
+    replace: '#\1\2\3'
+    validate: "{{ __run_sshd_executable }} -t -f %s"
+  notify: "run_sshd: restart sshd.service"

@@ -1,0 +1,18 @@
+# Internal role variables specific to: SUSE (os_family or distribution)
+#
+# Only values specific to the platform and its functionality should be included
+# here. Variables in this file override those defined in vars/main.yml.
+#
+# Each variable should have a concise comment above it, describing its purpose
+# and how it fits into the role's functionality.
+
+---
+
+# List of package names to be installed when run_sshd_state is
+# set to "present".
+__run_sshd_packages_install:
+  - "openssh"
+
+# List of package names to be uninstalled when run_sshd_state is
+# set to "absent".
+__run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"

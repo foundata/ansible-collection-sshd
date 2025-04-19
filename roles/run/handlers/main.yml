@@ -1,0 +1,11 @@
+# Handlers: Tasks that are triggered and run only when notified.
+
+---
+
+- name: "Handlers | sshd.service restart"
+  ansible.builtin.systemd_service:
+    name: "{{ __run_sshd_servicename }}"
+    state: "restarted"
+  listen: "run_sshd: restart sshd.service"
+  when:
+    - run_sshd_service_state != 'unmanaged'

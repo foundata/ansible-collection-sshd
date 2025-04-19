@@ -1,0 +1,42 @@
+# Collection meta data for Galaxy (needed to to build a collection artifact)
+
+---
+
+namespace: "foundata"
+name: "sshd"
+version: "0.1.0-dev"
+license:
+  # See https://spdx.org/licenses/ for valid IDs and syntax. The project's
+  # REUSE.toml file provides detailed licensing and copyright information
+  # in a human- and machine-readable format.
+  - "GPL-3.0-or-later"
+authors:
+  - "Andreas Haerter <ah@foundata.com>"
+
+readme: "README.md"
+description: "Manage the OpenSSH secure shell daemon (sshd), a SSH (Secure SHell) server."
+repository: "https://github.com/foundata/ansible-collection-sshd"
+tags:
+  - "application"
+  - "infrastructure"
+  - "linux"
+  - "security"
+  - "tools"
+
+# Collections that this collection requires to be installed.
+# Note: "*" selects the latest version available (not: "any")
+#dependencies:
+  #"ansible.utils": ">=5.1.0"
+  #"ansible.posix": ">=2.0.0"
+
+# List of file glob-like patterns to filter files or directories that should
+# not be included in the build artifact. Some are always filtered by
+# _build_files_manifest_walk(), e.g. galaxy.yml, *.pyc, *.retry, and .git
+build_ignore:
+  - ".ansible"
+  - ".gitignore"
+  - ".vscode"
+  - "*.tar.gz"
+  - "changelogs/.plugin-cache.yaml"
+  - "changelogs/fragments/archive"
+  - "changelogs/fragments/00-fragment-template.txt"

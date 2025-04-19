@@ -1,0 +1,94 @@
+# Main entry point for the role.
+
+---
+
+- name: "Main | Include role initialization tasks"
+  ansible.builtin.include_tasks:
+    file: "{{ role_path }}/tasks/init.yml"
+    apply:
+      tags:
+        - "always"
+        - "run_sshd_always"
+  tags:
+    - "always"
+    - "run_sshd_always"
+
+
+- name: "Main | Include setup tasks (install): default first, then best platform match (if any)"
+  ansible.builtin.include_tasks:
+    file: "{{ __run_sshd_task_file }}"
+    apply:
+      tags:
+        - "run_sshd_setup"
+  vars:
+    __run_sshd_task_file: "{{ role_path }}/tasks/setup/install/{{ __run_sshd_loop_item }}"
+  when:
+    - run_sshd_state == 'present'
+    - __run_sshd_task_file is file
+    - __run_sshd_loop_index <= 1
+  loop: "{{ ['default.yml'] + __run_sshd_platform_filenames_most_specific_first }}"
+  loop_control:
+    index_var: "__run_sshd_loop_index"
+    loop_var: "__run_sshd_loop_item"
+  tags:
+    - "run_sshd_setup"
+
+
+- name: "Main | Include configuration tasks: default first, then best platform match (if any)"
+  ansible.builtin.include_tasks:
+    file: "{{ __run_sshd_task_file }}"
+    apply:
+      tags:
+        - "run_sshd_config"
+  vars:
+    __run_sshd_task_file: "{{ role_path }}/tasks/config/{{ __run_sshd_loop_item }}"
+  when:
+    - run_sshd_state == 'present'
+    - __run_sshd_task_file is file
+    - __run_sshd_loop_index <= 1
+  loop: "{{ ['default.yml'] + __run_sshd_platform_filenames_most_specific_first }}"
+  loop_control:
+    index_var: "__run_sshd_loop_index"
+    loop_var: "__run_sshd_loop_item"
+  tags:
+    - "run_sshd_config"
+
+
+- name: "Main | Include service or daemon management tasks: default first, then best platform match (if any)"
+  ansible.builtin.include_tasks:
+    file: "{{ __run_sshd_task_file }}"
+    apply:
+      tags:
+        - "run_sshd_service"
+  vars:
+    __run_sshd_task_file: "{{ role_path }}/tasks/service/{{ __run_sshd_loop_item }}"
+  when:
+    - run_sshd_state == 'present'
+    - __run_sshd_task_file is file
+    - __run_sshd_loop_index <= 1
+  loop: "{{ ['default.yml'] + __run_sshd_platform_filenames_most_specific_first }}"
+  loop_control:
+    index_var: "__run_sshd_loop_index"
+    loop_var: "__run_sshd_loop_item"
+  tags:
+    - "run_sshd_service"
+
+
+- name: "Main | Include setup tasks (uninstall): default first, then best platform match (if any)"
+  ansible.builtin.include_tasks:
+    file: "{{ __run_sshd_task_file }}"
+    apply:
+      tags:
+        - "run_sshd_setup"
+  vars:
+    __run_sshd_task_file: "{{ role_path }}/tasks/setup/uninstall/{{ __run_sshd_loop_item }}"
+  when:
+    - run_sshd_state == 'absent'
+    - __run_sshd_task_file is file
+    - __run_sshd_loop_index <= 1
+  loop: "{{ ['default.yml'] + __run_sshd_platform_filenames_most_specific_first }}"
+  loop_control:
+    index_var: "__run_sshd_loop_index"
+    loop_var: "__run_sshd_loop_item"
+  tags:
+    - "run_sshd_setup"

@@ -101,10 +101,11 @@ __run_sshd_packages_removal:
 #       - "/etc/ssh/ssh_host_ecdsa_key"
 #   This will generate multiple entries in the config file, one per list item.
 __run_sshd_sshd_settings_defaults:
+  Port: 22
   # Security: Strong host key cryptography only (=ed25519 and nothing else)
   HostKey:
     - "{{ __run_sshd_hostkey_ed25519_file }}"
-   # Auditing: Record key fingerprints on login for authentication tracking
+  # Auditing: Record key fingerprints on login for authentication tracking
   LogLevel: "VERBOSE"
   # Authentication timing: Close inactive authentication attempts
   LoginGraceTime: 30

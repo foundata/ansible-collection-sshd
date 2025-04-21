@@ -5,16 +5,18 @@
 
 - name: "Config | Default | Extract configured host keys"
   ansible.builtin.set_fact:
-    configured_hostkeys: >-
-      (__run_sshd_merged_sshd_settings.HostKey is string)
-      | ternary([__run_sshd_merged_sshd_settings.HostKey], __run_sshd_merged_sshd_settings.HostKey)
-      | default([])
+    __run_sshd_configured_hostkeys: >-
+      {{
+        (__run_sshd_merged_sshd_settings.HostKey is string)
+        | ternary([__run_sshd_merged_sshd_settings.HostKey], __run_sshd_merged_sshd_settings.HostKey)
+        | default([])
+      }}
 
 
 - name: "Config | Default | Check if all configured host keys exist"
   ansible.builtin.stat:
     path: "{{ item }}"
-  loop: "{{ configured_hostkeys }}"
+  loop: "{{ __run_sshd_configured_hostkeys }}"
   register: __run_sshd_hostkey_stats
 
 

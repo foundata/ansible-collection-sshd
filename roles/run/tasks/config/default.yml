@@ -118,7 +118,7 @@
 - name: "Config | Default | Show the list of options configured in additional sshd config files"
   ansible.builtin.debug:
     var: __run_sshd_additional_options
-    verbosity: 3
+    verbosity: 1
   when:
     - __run_sshd_additional_options is defined
     - __run_sshd_additional_options | length > 0

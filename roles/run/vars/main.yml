@@ -48,8 +48,8 @@ __run_sshd_supported_platforms:
       - "12"
   - name: "Fedora"
     versions:
+      - "42"
       - "41"
-      - "40"
   - name: "openSUSE Leap"
     versions:
       - "15.6"
@@ -88,38 +88,22 @@ __run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
 __run_sshd_packages_removal:
   [] # Remove the "[]" when adding values to this list.
 
-# FIXME description
-__run_sshd_config_file: "/etc/ssh/sshd_config"
-__run_sshd_config_include_dir: "/etc/ssh/sshd_config.d"
-__run_sshd_config_file_ansible: "{{ __run_sshd_config_include_dir }}/00-ansible.conf" # 00- prefix to make sure the file gets included early
 
-__run_sshd_config_owner: "root"
-__run_sshd_config_group: "root"
-__run_sshd_config_mode: "u=rw,g=r,o=" # 0640
-
-# FIXME description
-__run_sshd_hostkey_owner: "root"
-__run_sshd_hostkey_group: "root"
-__run_sshd_hostkey_mode: "0600"
-
-# FIXME description
-__run_sshd_servicename: "sshd.service"
-__run_sshd_executable: "/usr/sbin/sshd"
-
-# FIXME description and logic (no task yet)
-__run_sshd_environment_file: /etc/sysconfig/sshd
-__run_sshd_environment_variable:
-  - OPTIONS
-
-
-# Dictionary of curated sshd configuration defaults
+# Additional default configuration for SSH daemon.
 #
 # Use standard SSH option names as keys with their corresponding values.
-# For boolean values, use true/false (these will be converted to yes/no by
-# configuration tasks as needed).
+# Special cases:
+# - For boolean values, use true/false (these will be converted to yes/no by
+#   configuration tasks as needed).
+# - For options that can have multiple values, you can use a list:
+#     HostKey:
+#       - "/etc/ssh/ssh_host_ed25519_key"
+#       - "/etc/ssh/ssh_host_ecdsa_key"
+#   This will generate multiple entries in the config file, one per list item.
 __run_sshd_sshd_settings_defaults:
-  # Security: Strong host key cryptography only
-  HostKey: "/etc/ssh/ssh_host_ed25519_key"
+  # Security: Strong host key cryptography only (=ed25519 and nothing else)
+  HostKey:
+    - "{{ __run_sshd_hostkey_ed25519_file }}"
    # Auditing: Record key fingerprints on login for authentication tracking
   LogLevel: "VERBOSE"
   # Authentication timing: Close inactive authentication attempts
@@ -170,3 +154,51 @@ __run_sshd_sshd_settings_defaults:
   KexAlgorithms: "curve25519-sha256@libssh.org"
   Ciphers: "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"
   MACs: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com"
+
+
+# Configuration file paths, ownership, and permissions for the SSH daemon.
+# These variables define the different locations of configuration files, the
+# include directory, and the Ansible-managed configuration file, ensuring
+# consistent file handling across distributions.
+__run_sshd_config_file: "/etc/ssh/sshd_config"
+__run_sshd_config_include_dir: "/etc/ssh/sshd_config.d"
+__run_sshd_config_file_ansible: "{{ __run_sshd_config_include_dir }}/00-ansible.conf" # 00- prefix to make sure the file gets included early
+__run_sshd_config_owner: "root"
+__run_sshd_config_group: "root"
+__run_sshd_config_mode: "u=rw,g=r,o=" # 0640
+
+__run_sshd_hostkey_rsa_file: "/etc/ssh/ssh_host_rsa_key"
+__run_sshd_hostkey_dsa_file: "/etc/ssh/ssh_host_dsa_key"
+__run_sshd_hostkey_ecdsa_file: "/etc/ssh/ssh_host_ecdsa_key"
+__run_sshd_hostkey_ed25519_file: "/etc/ssh/ssh_host_ed25519_key"
+__run_sshd_hostkey_owner: "root"
+__run_sshd_hostkey_group: "root"
+__run_sshd_hostkey_mode: "0600"
+
+
+# Privilege separation directory configuration for SSH daemon. These variables
+# control the directory used by sshd for privilege separation. The directory
+# must exist and have proper permissions for sshd to work correctly.
+#
+# Hint for maintainers: Sadly, all major distributions use different paths which
+# is not configurable (and therefore not easy to determine). One way to
+# determine the path an OS is using is by provoking an error on a test instance:
+#
+#   1. Delete potential privilege separation directories:
+#      rmdir /var/empty /run/sshd /var/run/sshd /var/priv \
+#            /usr/share/empty.sshd \ /var/lib/empty
+#   2. sshd should fail now ("Missing privilege separation directory: <path>"),
+#      so restart and check the logs:
+#      systemctl restart sshd.service
+#      journalctl -xeu sshd.service
+__run_sshd_privilegeseparation_dir: ""
+__run_sshd_privilegeseparation_owner: "root"
+__run_sshd_privilegeseparation_group: "root"
+__run_sshd_privilegeseparation_mode: "u=rwx,g=rx,o=rx" # 0755
+
+
+# SSH daemon service name and executable path.
+# These variables define the systemd service name for SSH daemon
+# and the path to the sshd executable for service management and validation.
+__run_sshd_servicename: "sshd.service"
+__run_sshd_executable: "/usr/sbin/sshd"

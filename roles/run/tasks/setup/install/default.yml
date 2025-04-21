@@ -18,3 +18,15 @@
   when:
     - __run_sshd_packages_install is defined
     - (__run_sshd_packages_install | length) > 0
+
+
+- name: "Setup | Install | Default | Create privilege separation directory"
+  ansible.builtin.file:
+    path: "{{ __run_sshd_privilegeseparation_dir }}"
+    state: "directory"
+    owner: "{{ __run_sshd_privilegeseparation_owner }}"
+    group: "{{ __run_sshd_privilegeseparation_group }}"
+    mode: "{{ __run_sshd_privilegeseparation_mode }}"
+  when:
+    - __run_sshd_privilegeseparation_dir is defined
+    - __run_sshd_privilegeseparation_dir | length > 0

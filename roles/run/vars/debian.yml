@@ -1,4 +1,4 @@
-# Internal role variables specific to: SUSE (os_family or distribution)
+# Internal role variables specific to: Debian (os_family or distribution)
 #
 # Only values specific to the platform and its functionality should be included
 # here. Variables in this file override those defined in vars/main.yml.
@@ -8,10 +8,5 @@
 
 ---
 
-__run_sshd_packages_install:
-  - "openssh"
-
-__run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
-
 # Check vars/main.yml for hints on determining the privilege separation dir path
-__run_sshd_privilegeseparation_dir: "/var/lib/empty"
+__run_sshd_privilegeseparation_dir: "/run/sshd"

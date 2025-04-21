@@ -32,3 +32,7 @@ argument_specs:
           - "disabled"
           - "running"
           - "unmanaged"
+
+      run_sshd_sshd_settings:
+        type: "dict"
+        required: true

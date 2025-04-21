@@ -82,3 +82,8 @@
   when:
     - __run_sshd_vars_file is file
   loop: "{{ __run_sshd_platform_filenames_most_specific_last }}"
+
+
+- name: "Init | Set merged SSH settings"
+  ansible.builtin.set_fact:
+    __run_sshd_merged_sshd_settings: "{{ __run_sshd_sshd_settings_defaults | combine(run_sshd_sshd_settings) }}"

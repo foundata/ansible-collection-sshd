@@ -4,8 +4,8 @@
 
 - name: "Setup | Uninstall | Remove packages"
   ansible.builtin.package:
-    name: "{{ run_sshd_packages_uninstall }}"
+    name: "{{ __run_sshd_packages_uninstall }}"
     state: "absent"
   when:
     - __run_sshd_packages_uninstall is defined
-    - (__run_sshd_packages_uninstall | length) > 1
+    - (__run_sshd_packages_uninstall | length) > 0

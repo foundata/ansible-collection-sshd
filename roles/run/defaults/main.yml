@@ -43,7 +43,13 @@ run_sshd_service_state: "enabled"
 # sshd configuration values (additional ones or to overwrite defaults).
 #
 # Use standard SSH option names as keys with their corresponding values.
-# For boolean values, use true/false (these will be converted to yes/no by
-# configuration tasks as needed).
+# Special cases:
+# - For boolean values, use true/false (these will be converted to yes/no by
+#   configuration tasks as needed).
+# - For options that can have multiple values, you can use a list:
+#     HostKey:
+#       - "/etc/ssh/ssh_host_ed25519_key"
+#       - "/etc/ssh/ssh_host_ecdsa_key"
+#   This will generate multiple entries in the config file, one per list item.
 run_sshd_sshd_settings:
   {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults

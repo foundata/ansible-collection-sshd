@@ -2,16 +2,33 @@
 
 ---
 
-- name: "Config | Default | Remove deprecated files"
-  ansible.builtin.file:
+
+- name: "Config | Default | Extract configured host keys"
+  ansible.builtin.set_fact:
+    configured_hostkeys: "{{ (__run_sshd_merged_sshd_settings.HostKey is string) | ternary([__run_sshd_merged_sshd_settings.HostKey], __run_sshd_merged_sshd_settings.HostKey) | default([]) }}"
+
+
+- name: "Config | Default | Check if all configured host keys exist"
+  ansible.builtin.stat:
     path: "{{ item }}"
-    state: "absent"
-  loop:
-    - "{{ __run_sshd_config_include_dir }}/01-permitrootlogin.conf" # existing on some Red Hat environments
-    - "/etc/ssh/ssh_host_rsa_key"
-    - "/etc/ssh/ssh_host_rsa_key.pub"
-    - "/etc/ssh/ssh_host_ecdsa_key"
-    - "/etc/ssh/ssh_host_ecdsa_key.pub"
+  loop: "{{ configured_hostkeys }}"
+  register: __run_sshd_hostkey_stats
+
+
+- name: "Config | Default | Generate missing sshd host keys"
+  # ssh-keygen -A automatically checks for existing RSA, ECDSA, and ED25519 host
+  # keys and generates only the missing ones (regardless of configuration). The
+  # command produces output only when it creates new key files, making it easy
+  # to detect actual changes.
+  # /usr/libexec/openssh/sshd-keygen would be a more flexible alternative as it
+  # accepts specific key types as arguments, but it is usually only available on
+  # Red Hat-based distributions.
+  ansible.builtin.command: "ssh-keygen -A"
+  when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | list | length > 0
+  changed_when:
+    - __run_sshd_sshkeygen_result.rc == 0
+    - __run_sshd_sshkeygen_result.stdout | trim | length > 0
+  register: __run_sshd_sshkeygen_result
   notify: "run_sshd: restart sshd.service"
 
 
@@ -116,8 +133,11 @@
 - name: "Config | Default | Ensure additional config options take precedence by commenting out duplicates in main config"
   ansible.builtin.replace:
     path: "{{ __run_sshd_config_file }}"
-    # will search for something like HostKey|LogLevel|LoginGraceTime| [...] Subsystem[\\t ]+sftp|KexAlgorithms
-    regexp: '^([\t ]+)?({{ __run_sshd_additional_options | join("|") }})(.*)'
+    # Notes on the regex:
+    # - {{ __run_sshd_additional_options | join("|") }} will result in something like
+    #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms
+    # - Include has to be excluded from commenting as it can exists multiple times.
+    regexp: '^(?![\t ]*Include)([\t ]+)?({{ __run_sshd_additional_options | join("|") }})(.*)'
     replace: '#\1\2\3'
     validate: "{{ __run_sshd_executable }} -t -f %s"
   notify: "run_sshd: restart sshd.service"

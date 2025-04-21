@@ -191,7 +191,7 @@ __run_sshd_hostkey_mode: "0600"
 #      so restart and check the logs:
 #      systemctl restart sshd.service
 #      journalctl -xeu sshd.service
-__run_sshd_privilegeseparation_dir: ""
+__run_sshd_privilegeseparation_dir: null
 __run_sshd_privilegeseparation_owner: "root"
 __run_sshd_privilegeseparation_group: "root"
 __run_sshd_privilegeseparation_mode: "u=rwx,g=rx,o=rx" # 0755

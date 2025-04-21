@@ -1,4 +1,4 @@
-# Ansible managed
+# {{ ansible_managed }}
 
 {% set merged_settings = __run_sshd_sshd_settings_defaults | combine(run_sshd_sshd_settings) %}
 {% for key, value in merged_settings.items() %}

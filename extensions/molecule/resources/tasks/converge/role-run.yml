@@ -1,3 +1,5 @@
+# Tasks for the Molecule converge stage: Execute the collection role "run"
+# against all driver-created instances.
 
 - name: "Molecule | Converge | Include the foundata.sshd.run role"
   ansible.builtin.include_role:

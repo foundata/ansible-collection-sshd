@@ -5,7 +5,10 @@
 
 - name: "Config | Default | Extract configured host keys"
   ansible.builtin.set_fact:
-    configured_hostkeys: "{{ (__run_sshd_merged_sshd_settings.HostKey is string) | ternary([__run_sshd_merged_sshd_settings.HostKey], __run_sshd_merged_sshd_settings.HostKey) | default([]) }}"
+    configured_hostkeys: >-
+      (__run_sshd_merged_sshd_settings.HostKey is string)
+      | ternary([__run_sshd_merged_sshd_settings.HostKey], __run_sshd_merged_sshd_settings.HostKey)
+      | default([])
 
 
 - name: "Config | Default | Check if all configured host keys exist"
@@ -91,7 +94,7 @@
       {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results'] | map(attribute='content') | map('b64decode') | list) -%}
         {%- for line in file_content.splitlines() -%}
           {%- if line | regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
-            {%- set ssh_option_name = (line | ansible.builtin.regex_replace('\s+', ' ')) -%}
+            {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') -%}
             {%- if ssh_option_name | regex_search('^Subsystem[\t ]+', multiline=false, ignorecase=true) -%}
               {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0:2] | join('[\\t ]+') -%}
             {%- else -%}

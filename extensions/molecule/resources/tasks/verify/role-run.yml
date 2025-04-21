@@ -39,6 +39,8 @@
 
 - name: "Molecule | Verify | Check if SSH is listening on configured port"
   ansible.builtin.shell: |
+    set -e
+    set -o pipefail
     ss -tuln | grep -E "LISTEN.*:{{ __testing_configured_ssh_port }}( |$)"
   register: __testing_sshd_port_check
   changed_when: false
@@ -52,7 +54,6 @@
       - __testing_sshd_port_check.stdout | length > 0
     fail_msg: "SSH is not listening on port {{ __testing_configured_ssh_port }}"
     success_msg: "SSH is listening on port {{ __testing_configured_ssh_port }}"
-
 
 
 - name: "Molecule | Verify | Run ssh-audit against localhost on configured port"

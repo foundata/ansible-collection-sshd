@@ -4,3 +4,7 @@
     name: "foundata.sshd.run"
   vars:
     run_sshd_state: "present"
+    run_sshd_sshd_settings:
+      PermitRootLogin: true # Insecure, just for testing purposes
+      PermitEmptyPasswords: true # Insecure, just for testing purposes
+      PasswordAuthentication: true # Insecure, just for testing purposes

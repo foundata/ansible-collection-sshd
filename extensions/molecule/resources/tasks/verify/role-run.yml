@@ -11,11 +11,17 @@
   ansible.builtin.service_facts:
 
 
+- name: "Molecule | Verify | Show service facts"
+  ansible.builtin.debug:
+    var: ansible_facts['services']
+    verbosity: 3
+
+
 - name: "Molecule | Verify | Assert SSH service is running"
   ansible.builtin.assert:
     that:
-      - ansible_facts.services[__run_sshd_servicename] is defined
-      - ansible_facts.services[__run_sshd_servicename].state == 'running'
+      - ansible_facts['services'][__run_sshd_servicename] is defined
+      - ansible_facts['services'][__run_sshd_servicename].state == 'running'
     fail_msg: "SSH service '{{ __run_sshd_servicename }}' is not running"
     success_msg: "SSH service '{{ __run_sshd_servicename }}' is running"
 
@@ -37,31 +43,21 @@
     verbosity: 1
 
 
-- name: "Molecule | Verify | Check if SSH is listening on configured port"
-  ansible.builtin.shell: |
-    set -e
-    set -o pipefail
-    ss -tuln | grep -E "LISTEN.*:{{ __testing_configured_ssh_port }}( |$)"
-  register: __testing_sshd_port_check
-  changed_when: false
-  failed_when: false
-
-
-- name: "Molecule | Verify | Assert SSH is listening on configured port"
-  ansible.builtin.assert:
-    that:
-      - __testing_sshd_port_check.rc == 0
-      - __testing_sshd_port_check.stdout | length > 0
-    fail_msg: "SSH is not listening on port {{ __testing_configured_ssh_port }}"
-    success_msg: "SSH is listening on port {{ __testing_configured_ssh_port }}"
-
-
 - name: "Molecule | Verify | Run ssh-audit against localhost on configured port"
   ansible.builtin.shell: |-
     ssh-audit localhost:{{ __testing_configured_ssh_port }} -j > /tmp/ssh-audit-result.json
   register: __testing_ssh_audit_run
   changed_when: false
   failed_when: false
+
+
+- name: "Molecule | Verify | Assert ssh-audit executed successfully"
+  ansible.builtin.assert:
+    that:
+      - __testing_ssh_audit_run.rc == 0
+    fail_msg: "ssh-audit failed to run: {{ __testing_ssh_audit_run.stderr }}"
+    success_msg: "ssh-audit executed successfully"
+
 
 - name: "Molecule | Verify | Read ssh-audit JSON results"
   ansible.builtin.slurp:
@@ -79,35 +75,35 @@
 
 - name: "Molecule | Verify | Extract warnings and failures from ssh-audit results"
   ansible.builtin.set_fact:
-    ssh_audit_warnings: "{{ ssh_audit_results.warnings | default([]) }}"
-    ssh_audit_failures: "{{ ssh_audit_results.failures | default([]) }}"
+    __testing_ssh_audit_warnings: "{{ ssh_audit_results.warnings | default([]) }}"
+    __testing_ssh_audit_failures: "{{ ssh_audit_results.failures | default([]) }}"
   when: __testing_ssh_audit_run.rc == 0 and ssh_audit_results is defined
 
 
-- name: "Molecule | Verify | Display warnings and failures if any"
+- name: "Molecule | Verify | Display warnings if any"
   ansible.builtin.debug:
-    msg:
-      - "Warnings: {{ ssh_audit_warnings }}"
-      - "Failures: {{ ssh_audit_failures }}"
+    msg: "Warnings: {{ __testing_ssh_audit_warnings }}"
   when:
-    - ssh_audit_warnings is defined and ssh_audit_warnings | length > 0
-    - ssh_audit_failures is defined and ssh_audit_failures | length > 0
+    - __testing_ssh_audit_warnings is defined
+    - __testing_ssh_audit_warnings | length > 0
+
+
+- name: "Molecule | Verify | Display failures if any"
+  ansible.builtin.debug:
+    msg: "Failures: {{ __testing_ssh_audit_failures }}"
+  when:
+    - __testing_ssh_audit_failures is defined
+    - __testing_ssh_audit_failures | length > 0
 
 
 - name: "Molecule | Verify | Assert ssh-audit has no warnings or failures"
   ansible.builtin.assert:
     that:
       - __testing_ssh_audit_run.rc == 0
-      - (ssh_audit_warnings is defined and ssh_audit_warnings | length == 0) or ssh_audit_warnings is not defined
-      - (ssh_audit_failures is defined and ssh_audit_failures | length == 0) or ssh_audit_failures is not defined
+      - __testing_ssh_audit_warnings is not defined or
+        (__testing_ssh_audit_warnings is defined and __testing_ssh_audit_warnings | length == 0)
+      - __testing_ssh_audit_failures is not defined or
+        (__testing_ssh_audit_failures is defined and __testing_ssh_audit_failures | length == 0)
     fail_msg: "ssh-audit detected issues with SSH configuration"
     success_msg: "ssh-audit verified SSH configuration with no issues"
   when: __testing_ssh_audit_run.rc == 0
-
-
-- name: "Molecule | Verify | Assert ssh-audit executed successfully"
-  ansible.builtin.assert:
-    that:
-      - __testing_ssh_audit_run.rc == 0
-    fail_msg: "ssh-audit failed to run: {{ __testing_ssh_audit_run.stderr }}"
-    success_msg: "ssh-audit executed successfully"

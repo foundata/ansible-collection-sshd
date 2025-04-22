@@ -45,65 +45,48 @@
 
 - name: "Molecule | Verify | Run ssh-audit against localhost on configured port"
   ansible.builtin.shell: |-
-    ssh-audit localhost:{{ __testing_configured_ssh_port }} -j > /tmp/ssh-audit-result.json
+    ssh-audit localhost:{{ __testing_configured_ssh_port }} -jj > /tmp/ssh-audit-result.json
   register: __testing_ssh_audit_run
-  changed_when: false
-  failed_when: false
-
-
-- name: "Molecule | Verify | Assert ssh-audit executed successfully"
-  ansible.builtin.assert:
-    that:
-      - __testing_ssh_audit_run.rc == 0
-    fail_msg: "ssh-audit failed to run: {{ __testing_ssh_audit_run.stderr }}"
-    success_msg: "ssh-audit executed successfully"
+  failed_when:
+    - __testing_ssh_audit_run['rc'] == 1 # other exit codes >0 are reporting SSH config errors
 
 
 - name: "Molecule | Verify | Read ssh-audit JSON results"
   ansible.builtin.slurp:
-    src: /tmp/ssh-audit-result.json
-  register: ssh_audit_json_encoded
-  failed_when: false
-  when: __testing_ssh_audit_run.rc == 0
+    src: "/tmp/ssh-audit-result.json"
+  when:
+    - __testing_ssh_audit_run is defined
+    - __testing_ssh_audit_run['rc'] is defined
+  register: __testing_ssh_audit_json_encoded
 
 
 - name: "Molecule | Verify | Parse ssh-audit results"
   ansible.builtin.set_fact:
-    ssh_audit_results: "{{ ssh_audit_json_encoded['content'] | b64decode | from_json }}"
-  when: __testing_ssh_audit_run.rc == 0 and ssh_audit_json_encoded is defined and ssh_audit_json_encoded['content'] is defined
+    __testing_ssh_audit_results: "{{ __testing_ssh_audit_json_encoded['content'] | b64decode | from_json }}"
+  when:
+    - __testing_ssh_audit_json_encoded is defined
+    - __testing_ssh_audit_json_encoded['content'] is defined
 
 
-- name: "Molecule | Verify | Extract warnings and failures from ssh-audit results"
+- name: "Molecule | Verify | Check for CVEs or warnings and failures in recommendations"
   ansible.builtin.set_fact:
-    __testing_ssh_audit_warnings: "{{ ssh_audit_results.warnings | default([]) }}"
-    __testing_ssh_audit_failures: "{{ ssh_audit_results.failures | default([]) }}"
-  when: __testing_ssh_audit_run.rc == 0 and ssh_audit_results is defined
-
-
-- name: "Molecule | Verify | Display warnings if any"
-  ansible.builtin.debug:
-    msg: "Warnings: {{ __testing_ssh_audit_warnings }}"
+    __testing_ssh_audit_cves: "{{ __testing_ssh_audit_results['cves'] | default({}) | length > 0 }}"
+    __testing_ssh_audit_warnings: "{{ __testing_ssh_audit_results['recommendations']['warning'] | default({}) | length > 0 }}"
+    __testing_ssh_audit_failures: "{{ __testing_ssh_audit_results['recommendations']['critical'] | default({}) | length > 0 }}"
   when:
-    - __testing_ssh_audit_warnings is defined
-    - __testing_ssh_audit_warnings | length > 0
+    - __testing_ssh_audit_results is defined
+    - __testing_ssh_audit_results['recommendations'] is defined
 
 
-- name: "Molecule | Verify | Display failures if any"
-  ansible.builtin.debug:
-    msg: "Failures: {{ __testing_ssh_audit_failures }}"
-  when:
-    - __testing_ssh_audit_failures is defined
-    - __testing_ssh_audit_failures | length > 0
 
 
-- name: "Molecule | Verify | Assert ssh-audit has no warnings or failures"
+- name: "Molecule | Verify | Assert SSH configuration is secure"
   ansible.builtin.assert:
     that:
-      - __testing_ssh_audit_run.rc == 0
-      - __testing_ssh_audit_warnings is not defined or
-        (__testing_ssh_audit_warnings is defined and __testing_ssh_audit_warnings | length == 0)
-      - __testing_ssh_audit_failures is not defined or
-        (__testing_ssh_audit_failures is defined and __testing_ssh_audit_failures | length == 0)
-    fail_msg: "ssh-audit detected issues with SSH configuration"
-    success_msg: "ssh-audit verified SSH configuration with no issues"
-  when: __testing_ssh_audit_run.rc == 0
+      - __testing_ssh_audit_run is defined
+      - __testing_ssh_audit_run['rc'] is defined
+      - not __testing_ssh_audit_cves
+      - not __testing_ssh_audit_warnings
+      - not __testing_ssh_audit_failures
+    fail_msg: "ssh-audit detected issues (CVE, warning or failure) or failed to run. Please check /tmp/ssh-audit-result.json for details."
+    success_msg: "ssh-audit verified SSH configuration with no issues."

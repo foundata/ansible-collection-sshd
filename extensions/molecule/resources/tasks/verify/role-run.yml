@@ -46,7 +46,11 @@
 - name: "Molecule | Verify | Run ssh-audit against localhost on configured port"
   ansible.builtin.shell: |-
     ssh-audit localhost:{{ __testing_configured_ssh_port }} -jj > /tmp/ssh-audit-result.json
+  args:
+    executable: "/bin/bash"
   register: __testing_ssh_audit_run
+  changed_when:
+    - __testing_ssh_audit_run['rc'] != 1
   failed_when:
     - __testing_ssh_audit_run['rc'] == 1 # other exit codes >0 are reporting SSH config errors
 
@@ -76,8 +80,6 @@
   when:
     - __testing_ssh_audit_results is defined
     - __testing_ssh_audit_results['recommendations'] is defined
-
-
 
 
 - name: "Molecule | Verify | Assert SSH configuration is secure"

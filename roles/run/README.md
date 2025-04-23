@@ -21,11 +21,11 @@ The `foundata.sshd.run` Ansible role (part if the `foundata.sshd` Ansible collec
 Main features:
 
 * Sane defaults:
+  * Modern cryptography.
+  * Extended Logging.
   * Key-based authentication, no password based `root` login
-  * Modern cryptography
-  * Extended Logging
   * Disabled Kerberos and GSSAPI (easy to re-enable but quite often not needed *by default*).
-  * See `__run_sshd_sshd_settings_defaults` in  `./vars/main.yml` for a complete list
+  * See `__run_sshd_sshd_settings_defaults` in  `./vars/main.yml` for a complete list.
 * Default configuration result passes [`ssh-audit`](https://github.com/jtesta/ssh-audit) without errors or warnings.
 * Simple to use: extend or adapt / overwrite the role's default configuration with a simple dictionary.
 
@@ -60,7 +60,7 @@ Installation with automatic upgrade:
         run_sshd_autoupgrade: true
 ```
 
-Installation with custom configuration options (e.g., `GatewayPorts: false`) and an override of the role's default setting for `GSSAPIAuthentication`:
+Installation with custom configuration options (e.g., `GatewayPorts: false`) and an override of the role's default setting for `GSSAPIAuthentication` and `Port`:
 
 ```yaml
 ---
@@ -76,9 +76,9 @@ Installation with custom configuration options (e.g., `GatewayPorts: false`) and
       vars:
         run_sshd_autoupgrade: true
         run_sshd_sshd_settings:
-          GSSAPIAuthentication: true
+          Port: 2222
           GatewayPorts: false
-
+          GSSAPIAuthentication: true
 ```
 
 Uninstall (⚠️ Warning: This will remove SSH access from the target machines!)
@@ -128,4 +128,10 @@ See `min_ansible_version` in [`meta/main.yml`](./meta/main.yml) and `__run_sshd_
 
 ## External requirements<a id="requirements"></a>
 
-There are no special requirements not covered by Ansible itself.
+* **SELinux**: This role does not handle SELinux configurations. Please add additional tasks before or after this role to accommodate these changes (e.g. if you're changing SSH port on a system with SELinux enabled, allowing it via `ssh_port_t` is needed). The following Ansible modules may help with SELinux configuration:
+  - [`ansible.posix.selinux`](https://docs.ansible.com/ansible/latest/collections/ansible/posix/selinux_module.html)
+  - [`community.general.sefcontext_module`](https://docs.ansible.com/ansible/latest/collections/community/general/sefcontext_module.html)
+  - [`community.general.seport_module`](https://docs.ansible.com/ansible/latest/collections/community/general/seport_module.html)
+* **Firewall**: This role does not manage firewall configurations. Please add additional tasks before or after this role to configure firewall rules as needed to access your SSH service.
+
+Beside that, there are no special requirements not covered by the role or Ansible itself.

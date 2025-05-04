@@ -28,7 +28,7 @@
   # /usr/libexec/openssh/sshd-keygen would be a more flexible alternative as it
   # accepts specific key types as arguments, but it is usually only available on
   # Red Hat-based distributions.
-  ansible.builtin.command: "ssh-keygen -A"
+  ansible.builtin.command: "{{ __run_sshd_sshkeygen_executable }} -A"
   when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | list | length > 0
   changed_when:
     - __run_sshd_sshkeygen_result.rc == 0
@@ -129,7 +129,7 @@
     path: "{{ __run_sshd_config_file }}"
     line: "Include {{ __run_sshd_config_include_dir }}/*.conf"
     state: "present"
-    validate: "{{ __run_sshd_executable }} -t -f %s"
+    validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
   notify: "run_sshd: restart sshd.service"
 
 
@@ -144,5 +144,5 @@
     # - Include has to be excluded from commenting as it can exists multiple times.
     regexp: '^(?![\t ]*Include)([\t ]+)?({{ __run_sshd_additional_options | join("|") }})(.*)'
     replace: '#\1\2\3'
-    validate: "{{ __run_sshd_executable }} -t -f %s"
+    validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
   notify: "run_sshd: restart sshd.service"

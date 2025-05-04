@@ -201,5 +201,6 @@ __run_sshd_privilegeseparation_mode: "u=rwx,g=rx,o=rx" # 0755
 # SSH daemon service name and executable path.
 # These variables define the systemd service name for SSH daemon
 # and the path to the sshd executable for service management and validation.
-__run_sshd_servicename: "sshd.service"
-__run_sshd_executable: "/usr/sbin/sshd"
+__run_sshd_sshd_servicename: "sshd.service"
+__run_sshd_sshd_executable: "/usr/sbin/sshd"
+__run_sshd_sshkeygen_executable: "/usr/bin/ssh-keygen"

@@ -12,4 +12,4 @@
 __run_sshd_privilegeseparation_dir: "/run/sshd"
 
 
-__run_sshd_servicename: "ssh.service"
+__run_sshd_sshd_servicename: "ssh.service"

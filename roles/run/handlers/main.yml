@@ -4,7 +4,7 @@
 
 - name: "Handlers | sshd.service restart"
   ansible.builtin.systemd_service:
-    name: "{{ __run_sshd_servicename }}"
+    name: "{{ __run_sshd_sshd_servicename }}"
     state: "restarted"
   listen: "run_sshd: restart sshd.service"
   when:

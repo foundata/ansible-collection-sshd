@@ -20,6 +20,16 @@
     - (__run_sshd_packages_install | length) > 0
 
 
+- name: "Setup | Install | Default | Remove unwanted files and directories (e.g., to prevent conflicts or resolve incompatibilities)"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: "absent"
+  when:
+    - __run_sshd_paths_removal is defined
+    - (__run_sshd_paths_removal | length) > 0
+  loop: "{{ __run_sshd_paths_removal }}"
+
+
 - name: "Setup | Install | Default | Create privilege separation directory"
   ansible.builtin.file:
     path: "{{ __run_sshd_privilegeseparation_dir }}"

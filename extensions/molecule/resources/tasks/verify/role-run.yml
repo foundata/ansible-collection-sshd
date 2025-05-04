@@ -20,10 +20,10 @@
 - name: "Molecule | Verify | Assert SSH service is running"
   ansible.builtin.assert:
     that:
-      - ansible_facts['services'][__run_sshd_servicename] is defined
-      - ansible_facts['services'][__run_sshd_servicename].state == 'running'
-    fail_msg: "SSH service '{{ __run_sshd_servicename }}' is not running"
-    success_msg: "SSH service '{{ __run_sshd_servicename }}' is running"
+      - ansible_facts['services'][__run_sshd_sshd_servicename] is defined
+      - ansible_facts['services'][__run_sshd_sshd_servicename].state == 'running'
+    fail_msg: "SSH service '{{ __run_sshd_sshd_servicename }}' is not running"
+    success_msg: "SSH service '{{ __run_sshd_sshd_servicename }}' is running"
 
 
 - name: "Molecule | Verify | Extract configured SSH port"

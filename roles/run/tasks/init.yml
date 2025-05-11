@@ -84,9 +84,8 @@
   loop: "{{ __run_sshd_platform_filenames_most_specific_last }}"
 
 
-### sshd specific
+### SSHD specific
 
-
-- name: "Init | Set merged SSH settings"
+- name: "Init | Merge user and default settings"
   ansible.builtin.set_fact:
     __run_sshd_merged_sshd_settings: "{{ __run_sshd_sshd_settings_defaults | ansible.builtin.combine(run_sshd_sshd_settings) }}"

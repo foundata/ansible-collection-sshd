@@ -31,8 +31,8 @@
   ansible.builtin.command: "{{ __run_sshd_sshkeygen_executable }} -A"
   when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | list | length > 0
   changed_when:
-    - __run_sshd_sshkeygen_result.rc == 0
-    - __run_sshd_sshkeygen_result.stdout | trim | length > 0
+    - __run_sshd_sshkeygen_result['rc'] == 0
+    - __run_sshd_sshkeygen_result['stdout'] | trim | length > 0
   register: __run_sshd_sshkeygen_result
   notify: "run_sshd: restart sshd.service"
 

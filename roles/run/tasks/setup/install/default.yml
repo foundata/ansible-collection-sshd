@@ -18,10 +18,6 @@
   when:
     - __run_sshd_packages_install is defined
     - (__run_sshd_packages_install | length) > 0
-  notify:
-    # additional packages might introduce lookup table types
-    - "run_postfix: update lookup tables"
-    - "run_postfix: restart postfix.service"
 
 
 - name: "Setup | Install | Default | Remove unwanted files and directories (e.g., to prevent conflicts or resolve incompatibilities)"

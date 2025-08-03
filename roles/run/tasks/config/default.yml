@@ -2,7 +2,6 @@
 
 ---
 
-
 - name: "Config | Default | Extract configured host keys"
   ansible.builtin.set_fact:
     __run_sshd_configured_hostkeys: >-
@@ -37,6 +36,12 @@
   notify: "run_sshd: restart sshd.service"
 
 
+- name: "Config | Default | Print config additional config file (merged defaults with passed values)"
+  ansible.builtin.debug:
+    var: __run_sshd_merged_sshd_settings
+    verbosity: 4
+
+
 - name: "Config | Default | Create additional config file"
   ansible.builtin.template:
     src: "00-sshd-managed.conf.j2"
@@ -61,7 +66,7 @@
 - name: "Config | Default | Show search results of additional sshd config files"
   ansible.builtin.debug:
     msg: "{{ __run_sshd_find_sshd_configd_result['files'] }}"
-    verbosity: 3
+    verbosity: 4
   when:
     - __run_sshd_find_sshd_configd_result is defined
     - __run_sshd_find_sshd_configd_result['files'] is defined
@@ -82,7 +87,7 @@
 - name: "Config | Default | Show contents of additional sshd config files"
   ansible.builtin.debug:
     msg: "{{ __run_sshd_slurp_sshd_configd_result['results'] }}"
-    verbosity: 3
+    verbosity: 4
   when:
     - __run_sshd_slurp_sshd_configd_result is defined
     - __run_sshd_slurp_sshd_configd_result['results'] is defined
@@ -118,7 +123,7 @@
 - name: "Config | Default | Show the list of options configured in additional sshd config files"
   ansible.builtin.debug:
     var: __run_sshd_additional_options
-    verbosity: 1
+    verbosity: 4
   when:
     - __run_sshd_additional_options is defined
     - __run_sshd_additional_options | length > 0

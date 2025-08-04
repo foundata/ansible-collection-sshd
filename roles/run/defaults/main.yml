@@ -7,49 +7,11 @@
 
 ---
 
-# String. Determines whether the managed resources should be "present" or
-# "absent". Defaults to "present". Possible values:
-#
-# - "present": Ensures that required components, such as software packages,
-#   are installed and configured.
-# - "absent": Reverts changes as much as possible, such as removing packages,
-#   deleting created users, stopping services, restoring modified settings, …
 run_sshd_state: "present"
 
-
-# Boolean. If set to true, all managed packages will be upgraded during each
-# Ansible run (e.g., when the package provider detects a newer version than
-# the currently installed one). Defaults to false.
 run_sshd_autoupgrade: false
 
-
-# String. Defines the status of the service(s). Defaults to "enabled".
-# Possible values:
-#
-# - "enabled": Service is running and will start automatically at boot.
-# - "disabled": Service is stopped and will not start automatically at boot.
-# - "running": Service is running but will not start automatically at boot.
-#   This can be used to start a service on the first Ansible run without
-#   enabling it for boot.
-# - "unmanaged": Service will not start at boot, and Ansible will not
-#   manage its running state. This is primarily useful when services are
-#   monitored and managed by systems other than Ansible.
-#
-# The singular form ("service") is used for simplicity. However, the defined
-# status applies to all services if multiple are being managed by this role.
 run_sshd_service_state: "enabled"
 
-
-# sshd configuration values (additional ones or to overwrite defaults).
-#
-# Use standard SSH option names as keys with their corresponding values.
-# Special cases:
-# - For boolean values, use true/false (these will be converted to yes/no by
-#   configuration tasks as needed).
-# - For options that can have multiple values, you can use a list:
-#     HostKey:
-#       - "/etc/ssh/ssh_host_ed25519_key"
-#       - "/etc/ssh/ssh_host_ecdsa_key"
-#   This will generate multiple entries in the config file, one per list item.
 run_sshd_sshd_settings:
   {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults

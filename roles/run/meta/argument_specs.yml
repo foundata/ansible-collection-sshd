@@ -14,19 +14,51 @@ argument_specs:
     options:
 
       run_sshd_state:
+        description: |
+          Determines whether the managed resources should be `present` or `absent`.
+
+          `present` ensures that required components, such as software packages, are
+          installed and configured.
+
+          `absent` reverts changes as much as possible, such as removing packages,
+          deleting created users, stopping services, restoring modified settings, …
         type: "str"
         required: true
+        default: "present"
         choices:
           - "present"
           - "absent"
 
       run_sshd_autoupgrade:
+        description: >
+          If set to true, all managed packages will be upgraded during each Ansible
+          run (e.g., when the package provider detects a newer version than the
+          currently installed one).
         type: "bool"
+        default: false
         required: true
 
       run_sshd_service_state:
+        description: |
+          Defines the status of the service(s).
+
+          `enabled`: Service is running and will start automatically at boot.
+
+          `disabled`: Service is stopped and will not start automatically at boot.
+
+          `running` Service is running but will not start automatically at boot.
+          This can be used to start a service on the first Ansible run without
+          enabling it for boot.
+
+          `unmanaged`: Service will not start at boot, and Ansible will not manage
+          its running state. This is primarily useful when services are monitored
+          and managed by systems other than Ansible.
+
+          The singular form (`service`) is used for simplicity. However, the defined
+          status applies to all services if multiple are being managed by this role.
         type: "str"
         required: true
+        default: "enabled"
         choices:
           - "enabled"
           - "disabled"
@@ -34,5 +66,20 @@ argument_specs:
           - "unmanaged"
 
       run_sshd_sshd_settings:
+        description: |
+          sshd configuration values (additional ones or to overwrite defaults; see
+          `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).
+
+          Simply use standard SSH option names as keys with their corresponding values.
+          Special cases:
+
+          - For boolean values, use true/false (these will be converted to yes/no by
+            configuration tasks as needed).
+
+          - For options that can have multiple values, you can use a list:
+              HostKey:
+                - "/etc/ssh/ssh_host_ed25519_key"
+                - "/etc/ssh/ssh_host_ecdsa_key"
+            This will generate multiple entries in the config file, one per list item.
         type: "dict"
         required: true

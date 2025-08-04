@@ -30,7 +30,7 @@ Main features:
 * Simple to use: extend or adapt / overwrite the role's default configuration with a simple dictionary.
 
 
-
+<!-- BEGIN ANSIBLE DOCSMITH -->
 ## Role variables<a id="variables"></a>
 
 See [`defaults/main.yml`](./defaults/main.yml) for all available role parameters and their description. [`vars/main.yml`](./vars/main.yml) contains internal variables you should not override (but their description might be interesting).
@@ -38,7 +38,7 @@ See [`defaults/main.yml`](./defaults/main.yml) for all available role parameters
 Additionally, there are variables read from other roles and/or the global scope (for example, host or group vars) as follows:
 
 - None right now.
-
+<!-- END ANSIBLE DOCSMITH -->
 
 
 ## Example playbooks, using this role<a id="examples"></a>

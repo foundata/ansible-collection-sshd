@@ -6,7 +6,13 @@ The `foundata.sshd.run` Ansible role (part if the `foundata.sshd` Ansible collec
 
 ## Table of contents<a id="toc"></a>
 
-- [Features](#features)<!-- BEGIN ANSIBLE DOCSMITH TOC --><!-- END ANSIBLE DOCSMITH TOC -->
+- [Features](#features)<!-- BEGIN ANSIBLE DOCSMITH TOC -->
+- [Role variables](#variables)
+  - [`run_sshd_state`](#variable-run_sshd_state)
+  - [`run_sshd_autoupgrade`](#variable-run_sshd_autoupgrade)
+  - [`run_sshd_service_state`](#variable-run_sshd_service_state)
+  - [`run_sshd_sshd_settings`](#variable-run_sshd_sshd_settings)
+<!-- END ANSIBLE DOCSMITH TOC -->
 - [Example playbooks, using this role](#examples)
 - [Supported tags](#tags)
 - [Dependencies](#dependencies)
@@ -30,20 +36,19 @@ Main features:
 
 
 <!-- BEGIN ANSIBLE DOCSMITH MAIN -->
+
 ## Role variables<a id="variables"></a>
 
 The following variables can be configured for this role:
 
-| Variable | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| `run_sshd_state` | `str` | Yes | `"present"` | Determines whether the managed resources should be `present` or `absent`.<br><br>`present` ensures that required components, such as software packages, are installed and configured.<br><br>`absent` reverts changes as much as possible, such as removing packages, deleting created users, stopping services, restoring modified settings, … |
-| `run_sshd_autoupgrade` | `bool` | Yes | `false` | If set to true, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one). |
-| `run_sshd_service_state` | `str` | Yes | `"enabled"` | Defines the status of the service(s).<br><br>`enabled`: Service is running and will start automatically at boot.<br><br>`disabled`: Service is stopped and will not start automatically at boot.<br><br>`running` Service is running but will not start automatically at boot. This can be used to start a service on the first Ansible run without enabling it for boot.<br><br>`unmanaged`: Service will not start at boot, and Ansible will not manage its running state. This is primarily useful when services are monitored and managed by systems other than Ansible.<br><br>The singular form (`service`) is used for simplicity. However, the defined status applies to all services if multiple are being managed by this role. |
-| `run_sshd_sshd_settings` | `dict` | Yes | N/A | sshd configuration values (additional ones or to overwrite defaults; see `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special cases:<br><br>- For boolean values, use true/false (these will be converted to yes/no by configuration tasks as needed).<br><br>- For options that can have multiple values, you can use a list: HostKey: - &quot;/etc/ssh/ssh_host_ed25519_key&quot; - &quot;/etc/ssh/ssh_host_ecdsa_key&quot; This will generate multiple entries in the config file, one per list item. |
+| Variable | Type | Required | Default | Description (abstract) |
+|----------|------|----------|---------|------------------------|
+| `run_sshd_state` | `str` | No | `"present"` | Determines whether the managed resources should be `present` or `absent`.<br><br>`present` ensures that required components, such as software packages, are installed and configured.<br><br>`absent` reverts changes as much as possible, such as […](#variable-run_sshd_state) |
+| `run_sshd_autoupgrade` | `bool` | Yes | `false` | If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one). |
+| `run_sshd_service_state` | `str` | No | `"enabled"` | Defines the status of the service(s).<br><br>`enabled`: Service is running and will start automatically at boot.<br><br>`disabled`: Service is stopped and will not start automatically at boot.<br><br>`running` Service is running but will not start […](#variable-run_sshd_service_state) |
+| `run_sshd_sshd_settings` | `dict` | Yes | N/A | sshd configuration values (additional ones or to overwrite defaults; see `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special cases:<br><br>- […](#variable-run_sshd_sshd_settings) |
 
-### Variable details<a id="variable-details"></a>
-
-#### `run_sshd_state`<a id="variable-run_sshd_state"></a>
+### `run_sshd_state`<a id="variable-run_sshd_state"></a>
 
 Determines whether the managed resources should be `present` or `absent`.
 
@@ -54,21 +59,23 @@ installed and configured.
 deleting created users, stopping services, restoring modified settings, …
 
 - **Type**: `str`
-- **Required**: Yes
+- **Required**: No
 - **Default**: `"present"`
 - **Choices**: `present`, `absent`
 
 
-#### `run_sshd_autoupgrade`<a id="variable-run_sshd_autoupgrade"></a>
 
-If set to true, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one).
+### `run_sshd_autoupgrade`<a id="variable-run_sshd_autoupgrade"></a>
+
+If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one).
 
 - **Type**: `bool`
 - **Required**: Yes
 - **Default**: `false`
 
 
-#### `run_sshd_service_state`<a id="variable-run_sshd_service_state"></a>
+
+### `run_sshd_service_state`<a id="variable-run_sshd_service_state"></a>
 
 Defines the status of the service(s).
 
@@ -88,12 +95,13 @@ The singular form (`service`) is used for simplicity. However, the defined
 status applies to all services if multiple are being managed by this role.
 
 - **Type**: `str`
-- **Required**: Yes
+- **Required**: No
 - **Default**: `"enabled"`
 - **Choices**: `enabled`, `disabled`, `running`, `unmanaged`
 
 
-#### `run_sshd_sshd_settings`<a id="variable-run_sshd_sshd_settings"></a>
+
+### `run_sshd_sshd_settings`<a id="variable-run_sshd_sshd_settings"></a>
 
 sshd configuration values (additional ones or to overwrite defaults; see
 `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).
@@ -112,6 +120,7 @@ Special cases:
 
 - **Type**: `dict`
 - **Required**: Yes
+
 
 
 

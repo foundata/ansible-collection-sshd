@@ -6,8 +6,7 @@ The `foundata.sshd.run` Ansible role (part if the `foundata.sshd` Ansible collec
 
 ## Table of contents<a id="toc"></a>
 
-- [Features](#features)
-- [Role variables](#variables)
+- [Features](#features)<!-- BEGIN ANSIBLE DOCSMITH TOC --><!-- END ANSIBLE DOCSMITH TOC -->
 - [Example playbooks, using this role](#examples)
 - [Supported tags](#tags)
 - [Dependencies](#dependencies)
@@ -30,7 +29,7 @@ Main features:
 * Simple to use: extend or adapt / overwrite the role's default configuration with a simple dictionary.
 
 
-<!-- BEGIN ANSIBLE DOCSMITH -->
+<!-- BEGIN ANSIBLE DOCSMITH MAIN -->
 ## Role variables<a id="variables"></a>
 
 The following variables can be configured for this role:
@@ -116,7 +115,7 @@ Special cases:
 
 
 
-<!-- END ANSIBLE DOCSMITH -->
+<!-- END ANSIBLE DOCSMITH MAIN -->
 
 
 ## Example playbooks, using this role<a id="examples"></a>

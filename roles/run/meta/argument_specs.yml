@@ -35,7 +35,6 @@ argument_specs:
           currently installed one).
         default: false
         type: "bool"
-        required: true
 
       run_sshd_service_state:
         description: |
@@ -80,4 +79,4 @@ argument_specs:
                 - "/etc/ssh/ssh_host_ecdsa_key"
             This will generate multiple entries in the config file, one per list item.
         type: "dict"
-        required: true
+        default: {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults

@@ -44,11 +44,13 @@ The following variables can be configured for this role:
 | Variable | Type | Required | Default | Description (abstract) |
 |----------|------|----------|---------|------------------------|
 | `run_sshd_state` | `str` | No | `"present"` | Determines whether the managed resources should be `present` or `absent`.<br><br>`present` ensures that required components, such as software packages, are installed and configured.<br><br>`absent` reverts changes as much as possible, such as […](#variable-run_sshd_state) |
-| `run_sshd_autoupgrade` | `bool` | Yes | `false` | If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one). |
+| `run_sshd_autoupgrade` | `bool` | No | `false` | If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one). |
 | `run_sshd_service_state` | `str` | No | `"enabled"` | Defines the status of the service(s).<br><br>`enabled`: Service is running and will start automatically at boot.<br><br>`disabled`: Service is stopped and will not start automatically at boot.<br><br>`running` Service is running but will not start […](#variable-run_sshd_service_state) |
-| `run_sshd_sshd_settings` | `dict` | Yes | N/A | sshd configuration values (additional ones or to overwrite defaults; see `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special cases:<br><br>- […](#variable-run_sshd_sshd_settings) |
+| `run_sshd_sshd_settings` | `dict` | No | `{}` | sshd configuration values (additional ones or to overwrite defaults; see `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special cases:<br><br>- […](#variable-run_sshd_sshd_settings) |
 
 ### `run_sshd_state`<a id="variable-run_sshd_state"></a>
+
+[*⇑ Back to ToC ⇑*](#toc)
 
 Determines whether the managed resources should be `present` or `absent`.
 
@@ -67,15 +69,19 @@ deleting created users, stopping services, restoring modified settings, …
 
 ### `run_sshd_autoupgrade`<a id="variable-run_sshd_autoupgrade"></a>
 
+[*⇑ Back to ToC ⇑*](#toc)
+
 If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one).
 
 - **Type**: `bool`
-- **Required**: Yes
+- **Required**: No
 - **Default**: `false`
 
 
 
 ### `run_sshd_service_state`<a id="variable-run_sshd_service_state"></a>
+
+[*⇑ Back to ToC ⇑*](#toc)
 
 Defines the status of the service(s).
 
@@ -103,23 +109,27 @@ status applies to all services if multiple are being managed by this role.
 
 ### `run_sshd_sshd_settings`<a id="variable-run_sshd_sshd_settings"></a>
 
+[*⇑ Back to ToC ⇑*](#toc)
+
 sshd configuration values (additional ones or to overwrite defaults; see
 `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).
 
 Simply use standard SSH option names as keys with their corresponding values.
 Special cases:
 
-- For boolean values, use true/false (these will be converted to yes/no by
-  configuration tasks as needed).
-
+- For boolean values, use `true`/`false`` (these will be converted to yes/no
+  by configuration tasks as needed).
 - For options that can have multiple values, you can use a list:
-    HostKey:
-      - "/etc/ssh/ssh_host_ed25519_key"
-      - "/etc/ssh/ssh_host_ecdsa_key"
+  ```
+  HostKey:
+    - "/etc/ssh/ssh_host_ed25519_key"
+    - "/etc/ssh/ssh_host_ecdsa_key"
+  ```
   This will generate multiple entries in the config file, one per list item.
 
 - **Type**: `dict`
-- **Required**: Yes
+- **Required**: No
+- **Default**: `{}`
 
 
 

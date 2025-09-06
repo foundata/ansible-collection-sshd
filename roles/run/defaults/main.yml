@@ -26,7 +26,7 @@ run_sshd_state: "present"
 # currently installed one).
 #
 # - Type: bool
-# - Required: Yes
+# - Required: No
 # - Default: false
 run_sshd_autoupgrade: false
 
@@ -59,10 +59,18 @@ run_sshd_service_state: "enabled"
 # Simply use standard SSH option names as keys with their corresponding values.
 # Special cases:
 #
-# - For boolean values, use true/false (these will be converted to yes/no by configuration tasks as needed).
-# - For options that can have multiple values, you can use a list: HostKey: - "/etc/ssh/ssh_host_ed25519_key" - "/etc/ssh/ssh_host_ecdsa_key" This will generate multiple entries in the config file, one per list item.
+# - For boolean values, use `true`/`false`` (these will be converted to yes/no
+#   by configuration tasks as needed).
+# - For options that can have multiple values, you can use a list:
+#   ```
+#   HostKey:
+#     - "/etc/ssh/ssh_host_ed25519_key"
+#     - "/etc/ssh/ssh_host_ecdsa_key"
+#   ```
+#   This will generate multiple entries in the config file, one per list item.
 #
 # - Type: dict
-# - Required: Yes
+# - Required: No
+# - Default: {}
 run_sshd_sshd_settings:
   {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults

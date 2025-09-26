@@ -59,8 +59,8 @@ run_sshd_service_state: "enabled"
 # Simply use standard SSH option names as keys with their corresponding values.
 # Special cases:
 #
-# - For boolean values, use `true`/`false`` (these will be converted to yes/no
-#   by configuration tasks as needed).
+# - For boolean values, use `true`/`false` (these will be converted to yes/no by
+#   configuration tasks as needed).
 # - For options that can have multiple values, you can use a list:
 #   ```
 #   HostKey:

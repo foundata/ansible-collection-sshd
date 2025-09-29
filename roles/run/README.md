@@ -1,6 +1,6 @@
 # Ansible role: `foundata.sshd.run`
 
-The `foundata.sshd.run` Ansible role (part if the `foundata.sshd` Ansible collection). It provides automated configuration management of `sshd`, implementing security best practices by default across major platforms.
+The `foundata.sshd.run` Ansible role (part of the `foundata.sshd` Ansible collection). It provides automated configuration management of `sshd`, implementing security best practices by default across major platforms.
 
 
 

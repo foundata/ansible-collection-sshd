@@ -101,13 +101,13 @@
       {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results'] | map(attribute='content') | map('b64decode') | list) -%}
         {%- for line in file_content.splitlines() -%}
           {%- if line | regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
-            {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') -%}
+            {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') | trim -%}
             {%- if ssh_option_name | regex_search('^Subsystem[\t ]+', multiline=false, ignorecase=true) -%}
               {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0:2] | join('[\\t ]+') -%}
             {%- else -%}
               {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0] -%}
             {%- endif -%}
-            {%- if ssh_option_name not in options -%}
+            {%- if ssh_option_name and ssh_option_name not in options -%}
               {%- set _ = options.append(ssh_option_name) -%}
             {%- endif -%}
           {%- endif -%}
@@ -145,9 +145,14 @@
     path: "{{ __run_sshd_config_file }}"
     # Notes on the regex:
     # - {{ __run_sshd_additional_options | join("|") }} will result in something like
-    #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms
+    #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms\
     # - Include has to be excluded from commenting as it can exists multiple times.
-    regexp: '^(?![\t ]*Include)([\t ]+)?({{ __run_sshd_additional_options | join("|") }})(.*)'
+    # - When options are joined with '|', an empty (whitespace-only) option would
+    #   produce patterns like 'HostKey||LogLevel', where '||' matches an empty
+    #   string at any position. The 'select' filter prevents this. Even though we
+    #   already ensure that empty options do not enter __run_sshd_additional_options,
+    #   this provides an extra layer of safety.
+    regexp: '^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_additional_options | select | join("|") }})(.*)'
     replace: '#\1\2\3'
     validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
   notify: "run_sshd: restart sshd.service"

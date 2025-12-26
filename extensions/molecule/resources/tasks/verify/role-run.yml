@@ -26,13 +26,62 @@
     success_msg: "SSH service '{{ __run_sshd_sshd_servicename }}' is running"
 
 
+# Regression tests for sshd_config commenting logic.
+# Background: On Fedora 43, the 50-redhat.conf contains a TAB-indented line
+# which caused empty strings to enter the options list. When joined with '|',
+# this created patterns like 'Port||HostKey' where '||' matches empty strings,
+# causing every line to be re-commented on each run (adding '#' repeatedly).
+- name: "Molecule | Verify | Read main sshd_config content"
+  ansible.builtin.slurp:
+    src: "{{ __run_sshd_config_file }}"
+  register: __testing_sshd_config_content
+
+
+- name: "Molecule | Verify | Check for double-commented lines in sshd_config"
+  ansible.builtin.set_fact:
+    __testing_double_commented_lines: >-
+      {{ (__testing_sshd_config_content['content'] | b64decode).split('\n')
+         | select('match', '^##')
+         | list }}
+
+
+- name: "Molecule | Verify | Assert no double-commented lines exist (regex idempotency)"
+  ansible.builtin.assert:
+    that:
+      - __testing_double_commented_lines | length == 0
+    fail_msg: >-
+      Found {{ __testing_double_commented_lines | length }} double-commented lines in
+      {{ __run_sshd_config_file }}. This indicates the commenting regex matched
+      already-commented lines. Lines: {{ __testing_double_commented_lines[:5] }}
+    success_msg: "No double-commented lines found - commenting regex is idempotent"
+
+
+- name: "Molecule | Verify | Check that Include directive is not commented out"
+  ansible.builtin.shell: |
+    grep -c '^Include ' {{ __run_sshd_config_file }} || echo "0"
+  args:
+    executable: "/bin/bash"
+  register: __testing_include_count
+  changed_when: false
+
+
+- name: "Molecule | Verify | Assert Include directive exists and is active"
+  ansible.builtin.assert:
+    that:
+      - __testing_include_count.stdout | int > 0
+    fail_msg: >-
+      No active 'Include' directive found in {{ __run_sshd_config_file }}.
+      The Include directive should not be commented out.
+    success_msg: "Include directive is present and active"
+
+
 - name: "Molecule | Verify | Extract configured SSH port"
   ansible.builtin.set_fact:
     __testing_configured_ssh_port: >-
       {{
         __run_sshd_merged_sshd_settings.Port | default(22) | int
         if (__run_sshd_merged_sshd_settings is defined and
-            __run_sshd_merged_sshd_settings.Port is defined)
+            __run_sshd_merged_sshd_settings['Port'] is defined)
         else 22
       }}
 

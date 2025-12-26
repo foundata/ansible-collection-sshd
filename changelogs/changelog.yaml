@@ -1,6 +1,34 @@
 ---
 ancestor: null
 releases:
+  1.2.1:
+    changes:
+      bugfixes:
+        - 'run role - Fixed a bug where the regex for commenting out duplicate sshd_config
+
+          options would re-match already-commented lines on every run, prepending
+
+          additional ``#`` characters. This occurred on Fedora 43 where
+
+          ``/etc/ssh/sshd_config.d/50-redhat.conf`` contains a TAB-indented
+
+          ``AcceptEnv`` line, causing an empty string to enter the options list.
+
+          When joined with ``|``, patterns like ``Port||HostKey`` matched empty
+
+          strings at any position, affecting all lines.
+
+          '
+      release_summary: 'Release Date: 2025-12-26
+
+
+        Bugfix release.
+
+        '
+    fragments:
+      - 1.2.1-release.yaml
+      - fix-sshd-config-regex-idempotency.yaml
+    release_date: '2025-12-26'
   1.2.0:
     changes:
       minor_changes:

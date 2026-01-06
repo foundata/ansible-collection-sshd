@@ -9,7 +9,7 @@
 ---
 
 __run_sshd_packages_install:
-  - "openssh"
+  - "openssh-server"
 
 
 __run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"

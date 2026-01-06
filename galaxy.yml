@@ -16,6 +16,9 @@ authors:
 readme: "README.md"
 description: "Manage the OpenSSH secure shell daemon (sshd), a SSH (Secure SHell) server."
 repository: "https://github.com/foundata/ansible-collection-sshd"
+documentation: "https://foundata.com/en/projects/ansible-collection-sshd/#doc"
+issues: "https://foundata.com/en/projects/ansible-collection-sshd/#issues"
+homepage: "https://foundata.com/en/projects/ansible-collection-sshd/"
 tags:
   - "application"
   - "infrastructure"

@@ -66,10 +66,8 @@ __run_sshd_supported_platforms:
 # List of package names to be installed when run_sshd_state is
 # set to "present".
 __run_sshd_packages_install:
-  # We maintain this package list separately from the platform-specific
-  # variables in this directory because these packages likely have the same
-  # names across both supported platforms and unsupported, best-effort
-  # platforms.
+  # Kept this package list separate from platform-specific vars since these
+  # package names are consistent across supported and best-effort platforms.
   - "openssh-server"
 
 
@@ -195,7 +193,8 @@ __run_sshd_hostkey_mode: "0600"
 #
 #   1. Delete potential privilege separation directories:
 #      rmdir /var/empty /run/sshd /var/run/sshd /var/priv \
-#            /usr/share/empty.sshd \ /var/lib/empty
+#            /usr/share/empty.sshd \
+#            /var/lib/empty
 #   2. sshd should fail now ("Missing privilege separation directory: <path>"),
 #      so restart and check the logs:
 #      systemctl restart sshd.service

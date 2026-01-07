@@ -36,25 +36,35 @@
   notify: "run_sshd: restart sshd.service"
 
 
-- name: "Config | Default | Print config additional config file (merged defaults with passed values)"
+- name: "Config | Default | Print effective config (merged defaults with passedvalues)"
   ansible.builtin.debug:
     var: __run_sshd_effective_sshd_settings
     verbosity: 4
 
 
-- name: "Config | Default | Create additional config file"
-  ansible.builtin.template:
-    src: "00-sshd-managed.conf.j2"
-    dest: "{{ __run_sshd_config_file_ansible }}"
-    owner: "{{ __run_sshd_config_owner }}"
-    group: "{{ __run_sshd_config_group }}"
-    mode: "{{ __run_sshd_config_mode }}"
+- name: "Config | Default | Ensure drop-in config directory exists with proper permissions"
+  ansible.builtin.file:
+    path: "{{ __run_sshd_config_dropin_dir }}"
+    state: "directory"
+    owner: "{{ __run_sshd_config_dropin_dir_owner }}"
+    group: "{{ __run_sshd_config_dropin_dir_group }}"
+    mode: "{{ __run_sshd_config_dropin_dir_mode }}"
   notify: "run_sshd: restart sshd.service"
 
 
-- name: "Config | Default | Search for additional sshd config files"
+- name: "Config | Default | Create drop-in config file"
+  ansible.builtin.template:
+    src: "00-sshd-managed.conf.j2"
+    dest: "{{ __run_sshd_config_dropin_file }}"
+    owner: "{{ __run_sshd_config_dropin_file_owner }}"
+    group: "{{ __run_sshd_config_dropin_file_group }}"
+    mode: "{{ __run_sshd_config_dropin_file_mode }}"
+  notify: "run_sshd: restart sshd.service"
+
+
+- name: "Config | Default | Search for sshd drop-in config files"
   ansible.builtin.find:
-    paths: "{{ __run_sshd_config_include_dir }}"
+    paths: "{{ __run_sshd_config_dropin_dir }}"
     patterns: '^.+\.conf$'
     use_regex: true
     hidden: true
@@ -63,7 +73,7 @@
   register: __run_sshd_find_sshd_configd_result
 
 
-- name: "Config | Default | Show search results of additional sshd config files"
+- name: "Config | Default | Show search results of sshd drop-in config files"
   ansible.builtin.debug:
     msg: "{{ __run_sshd_find_sshd_configd_result['files'] }}"
     verbosity: 4
@@ -73,7 +83,7 @@
     - __run_sshd_find_sshd_configd_result['files'] | length > 0
 
 
-- name: "Config | Default | Get contents of additional sshd config files"
+- name: "Config | Default | Get contents of sshd drop-in config files"
   ansible.builtin.slurp:
     src: "{{ item }}"
   register: __run_sshd_slurp_sshd_configd_result
@@ -84,7 +94,7 @@
     - __run_sshd_find_sshd_configd_result['files'] | length > 0
 
 
-- name: "Config | Default | Show contents of additional sshd config files"
+- name: "Config | Default | Show contents of sshd drop-in config files"
   ansible.builtin.debug:
     msg: "{{ __run_sshd_slurp_sshd_configd_result['results'] }}"
     verbosity: 4
@@ -94,9 +104,9 @@
     - __run_sshd_slurp_sshd_configd_result['results'] | length > 0
 
 
-- name: "Config | Default | Create a list of options configured in additional sshd config files"
+- name: "Config | Default | Create a list of options configured in sshd drop-in config files"
   ansible.builtin.set_fact:
-    __run_sshd_additional_options: |-
+    __run_sshd_dropin_options: |-
       {%- set options = [] -%}
       {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results'] | map(attribute='content') | map('b64decode') | list) -%}
         {%- for line in file_content.splitlines() -%}
@@ -120,42 +130,52 @@
     - __run_sshd_slurp_sshd_configd_result['results'] | length > 0
 
 
-- name: "Config | Default | Show the list of options configured in additional sshd config files"
+- name: "Config | Default | Show the list of options configured in drop-in sshd config files"
   ansible.builtin.debug:
-    var: __run_sshd_additional_options
+    var: __run_sshd_dropin_options
     verbosity: 4
   when:
-    - __run_sshd_additional_options is defined
-    - __run_sshd_additional_options | length > 0
+    - __run_sshd_dropin_options is defined
+    - __run_sshd_dropin_options | length > 0
 
 
-- name: "Config | Default | Ensure Include directive exists in sshd_config"
+- name: "Config | Default | Ensure main config file exists with proper permissions"
+  ansible.builtin.file:
+    path: "{{ __run_sshd_config_file }}"
+    state: "touch"
+    owner: "{{ __run_sshd_config_file_owner }}"
+    group: "{{ __run_sshd_config_file_group }}"
+    mode: "{{ __run_sshd_config_file_mode }}"
+    access_time: "preserve"
+    modification_time: "preserve"
+
+
+- name: "Config | Default | Ensure 'Include' directive exists in main config file"
   ansible.builtin.lineinfile:
     path: "{{ __run_sshd_config_file }}"
-    line: "Include {{ __run_sshd_config_include_dir }}/*.conf"
+    line: "Include {{ __run_sshd_config_dropin_dir }}/*.conf"
     state: "present"
     validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
   notify: "run_sshd: restart sshd.service"
 
 
-# Remember: It is not possible to overwrite values in the sshd configuration,
-# first occurrence wins.
-- name: "Config | Default | Comment out duplicates in main sshd config (if any) to ensure additional config precedence"
+# Remember: It is not possible to overwrite values in the sshd config, first occurrence wins.
+- name: "Config | Default | Comment out duplicates in main config file (if any) to ensure drop-in config precedence"
   ansible.builtin.replace:
     path: "{{ __run_sshd_config_file }}"
     # Notes on the regex:
-    # - {{ __run_sshd_additional_options | join('|') }} will result in something like
+    # - {{ __run_sshd_dropin_options | join('|') }} will result in something like
     #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms\
     # - Include has to be excluded from commenting as it can exists multiple times.
     # - When options are joined with '|', an empty (whitespace-only) option would
     #   produce patterns like 'foo||bar', where '||' matches an empty string at any
     #   position. The 'select' filter prevents this.
     #   Even though we already ensure that empty options do not enter
-    #   __run_sshd_additional_options, this provides an extra layer of safety.
+    #   __run_sshd_dropin_options, this provides an extra layer of safety.
     # - (?=[\t ]|$) is a safeguard to prevent partial option matches (e.g., 'Foo'
     #   accidentally matching 'FooBar' if such a token appeared).
     regexp: >-
-      ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_additional_options | select | join('|') }})(?=[\t ]|$)(.*)
+      ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_dropin_options | select | join('|') }})(?=[\t ]|$)(.*)
     replace: '#\1\2\3'
     validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
   notify: "run_sshd: restart sshd.service"

@@ -30,13 +30,13 @@
   loop: "{{ __run_sshd_paths_removal }}"
 
 
-- name: "Setup | Install | Default | Create privilege separation directory"
+- name: "Setup | Install | Default | Ensure privilege separation directory exists with proper permissions"
   ansible.builtin.file:
-    path: "{{ __run_sshd_privilegeseparation_dir }}"
+    path: "{{ __run_sshd_privseparation_dir }}"
     state: "directory"
-    owner: "{{ __run_sshd_privilegeseparation_owner }}"
-    group: "{{ __run_sshd_privilegeseparation_group }}"
-    mode: "{{ __run_sshd_privilegeseparation_mode }}"
+    owner: "{{ __run_sshd_privseparation_owner }}"
+    group: "{{ __run_sshd_privseparation_group }}"
+    mode: "{{ __run_sshd_privseparation_mode }}"
   when:
-    - __run_sshd_privilegeseparation_dir is defined
-    - __run_sshd_privilegeseparation_dir | length > 0
+    - __run_sshd_privseparation_dir is defined
+    - __run_sshd_privseparation_dir | length > 0

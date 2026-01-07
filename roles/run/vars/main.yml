@@ -168,19 +168,27 @@ __run_sshd_sshd_settings_defaults:
 # include directory, and the Ansible-managed configuration file, ensuring
 # consistent file handling across distributions.
 __run_sshd_config_file: "/etc/ssh/sshd_config"
-__run_sshd_config_include_dir: "/etc/ssh/sshd_config.d"
-__run_sshd_config_file_ansible: "{{ __run_sshd_config_include_dir }}/00-ansible.conf" # 00- prefix to make sure the file gets included early
-__run_sshd_config_owner: "root"
-__run_sshd_config_group: "root"
-__run_sshd_config_mode: "u=rw,g=r,o=" # 0640
+__run_sshd_config_file_owner: "root"
+__run_sshd_config_file_group: "root"
+__run_sshd_config_file_mode: "u=rw,g=,o=" # 0600
+
+__run_sshd_config_dropin_dir: "/etc/ssh/sshd_config.d"
+__run_sshd_config_dropin_dir_owner: "{{ __run_sshd_config_file_owner }}"
+__run_sshd_config_dropin_dir_group: "{{ __run_sshd_config_file_group }}"
+__run_sshd_config_dropin_dir_mode: "u=rwx,g=,o=" # 0700
+
+__run_sshd_config_dropin_file: "{{ __run_sshd_config_dropin_dir }}/00-ansible.conf" # 00- prefix to ensure precedence / file gets included early
+__run_sshd_config_dropin_file_owner: "{{ __run_sshd_config_file_owner }}"
+__run_sshd_config_dropin_file_group: "{{ __run_sshd_config_file_group }}"
+__run_sshd_config_dropin_file_mode: "{{ __run_sshd_config_file_mode }}"
 
 __run_sshd_hostkey_rsa_file: "/etc/ssh/ssh_host_rsa_key"
 __run_sshd_hostkey_dsa_file: "/etc/ssh/ssh_host_dsa_key"
 __run_sshd_hostkey_ecdsa_file: "/etc/ssh/ssh_host_ecdsa_key"
 __run_sshd_hostkey_ed25519_file: "/etc/ssh/ssh_host_ed25519_key"
-__run_sshd_hostkey_owner: "root"
-__run_sshd_hostkey_group: "root"
-__run_sshd_hostkey_mode: "0600"
+__run_sshd_hostkey_owner: "{{ __run_sshd_config_file_owner }}"
+__run_sshd_hostkey_group: "{{ __run_sshd_config_file_group }}"
+__run_sshd_hostkey_mode: "{{ __run_sshd_config_file_mode }}"
 
 
 # Privilege separation directory configuration for SSH daemon. These variables
@@ -199,10 +207,10 @@ __run_sshd_hostkey_mode: "0600"
 #      so restart and check the logs:
 #      systemctl restart sshd.service
 #      journalctl -xeu sshd.service
-__run_sshd_privilegeseparation_dir: null
-__run_sshd_privilegeseparation_owner: "root"
-__run_sshd_privilegeseparation_group: "root"
-__run_sshd_privilegeseparation_mode: "u=rwx,g=rx,o=rx" # 0755
+__run_sshd_privseparation_dir: null
+__run_sshd_privseparation_owner: "root"
+__run_sshd_privseparation_group: "root"
+__run_sshd_privseparation_mode: "u=rwx,g=x,o=x" # 0711
 
 
 # SSH daemon service name and executable paths.

@@ -11,9 +11,24 @@
 __run_sshd_packages_install:
   - "openssh-server"
 
-
 __run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
 
+# On openSUSE Leap, sshd(8) reads configuration data from /etc/ssh/sshd_config
+# and /usr/etc/ssh/sshd_config if the file does not exist (cf.
+# https://manpages.opensuse.org/Leap-16.0/openssh-server/sshd_config.5.en.html)
+# By default, /etc/ssh/sshd_config is not existing on openSUSE Leap >= v16.0.
+# FIXME to be implemented
+# Use this as the default; override it with /etc/ssh/sshd_config if present via
+# fact later.
+__run_sshd_config_file: "/usr/etc/ssh/sshd_config"
+__run_sshd_config_file_mode: "u=rw,g=r,o=" # 0640
+
+__run_sshd_config_dropin_dir_mode: "u=rwx,g=rx,o=rx" # 0755
+
+__run_sshd_config_dropin_file_mode: "{{ __run_sshd_config_file_mode }}"
+
+__run_sshd_hostkey_mode: "u=rw,g=,o=" # 0600
 
 # Check vars/main.yml for hints on determining the privilege separation dir path
-__run_sshd_privilegeseparation_dir: "/var/lib/empty"
+__run_sshd_privseparation_dir: "/var/lib/empty"
+__run_sshd_privseparation_mode: "u=rx,g=rx,o=rx" # 0555

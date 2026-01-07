@@ -9,4 +9,4 @@
 ---
 
 # Check vars/main.yml for hints on determining the privilege separation dir path
-__run_sshd_privilegeseparation_dir: "/usr/share/empty.sshd"
+__run_sshd_privseparation_dir: "/usr/share/empty.sshd"

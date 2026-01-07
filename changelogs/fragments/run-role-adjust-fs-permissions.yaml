@@ -1,0 +1,4 @@
+---
+
+minor_changes:
+  - "``foundata.sshd.run``: Configuration file permissions now match each operating system's default behavior. Red Hat-like systems retain restrictive permissions (0600/0700), while Debian-like and SUSE systems use their standard defaults (typically 0644/0755 for config files and directories)."

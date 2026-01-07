@@ -146,7 +146,7 @@
     - __testing_ssh_audit_results['recommendations'] is defined
 
 
-- name: "Molecule | Verify | Assert SSH configuration is secure"
+- name: "Molecule | Verify | Assert SSH config is secure"
   ansible.builtin.assert:
     that:
       - __testing_ssh_audit_run is defined
@@ -155,4 +155,277 @@
       - not __testing_ssh_audit_warnings
       - not __testing_ssh_audit_failures
     fail_msg: "ssh-audit detected issues (CVE, warning or failure) or failed to run. Please check /tmp/ssh-audit-result.json for details."
-    success_msg: "ssh-audit verified SSH configuration with no issues."
+    success_msg: "ssh-audit verified SSH config with no issues."
+
+
+# Permission Verification Tests
+#
+# This section verifies that the role applies filesystem permissions that match
+# both the role's configured variables AND the expected OS package defaults
+# as they should be aligned.
+
+- name: "Molecule | Verify | Define symbolic-to-octal mode conversion map"
+  ansible.builtin.set_fact:
+    __testing_mode_map:
+      "u=rw,g=,o=": "0600"
+      "u=rw,g=r,o=": "0640"
+      "u=rw,g=r,o=r": "0644"
+      "u=rwx,g=,o=": "0700"
+      "u=rwx,g=x,o=x": "0711"
+      "u=rwx,g=rx,o=rx": "0755"
+      "u=rx,g=rx,o=rx": "0555"
+
+
+- name: "Molecule | Verify | Define paths to verify"
+  ansible.builtin.set_fact:
+    __testing_paths_to_verify:
+
+      - path: "{{ __run_sshd_config_file }}"
+        os_matrix_key: "config_file_mode"
+        expected_mode_role: "{{ __run_sshd_config_file_mode }}"
+        expected_owner: "{{ __run_sshd_config_file_owner }}"
+        expected_group: "{{ __run_sshd_config_file_group }}"
+
+      - path: "{{ __run_sshd_config_dropin_dir }}"
+        os_matrix_key: "config_dropin_dir_mode"
+        expected_mode_role: "{{ __run_sshd_config_dropin_dir_mode }}"
+        expected_owner: "{{ __run_sshd_config_dropin_dir_owner }}"
+        expected_group: "{{ __run_sshd_config_dropin_dir_group }}"
+
+      - path: "{{ __run_sshd_config_dropin_file }}"
+        os_matrix_key: "config_dropin_file_mode"
+        expected_mode_role: "{{ __run_sshd_config_dropin_file_mode }}"
+        expected_owner: "{{ __run_sshd_config_dropin_file_owner }}"
+        expected_group: "{{ __run_sshd_config_dropin_file_group }}"
+
+      - path: "{{ __run_sshd_privseparation_dir }}"
+        os_matrix_key: "privseparation_mode"
+        expected_mode_role: "{{ __run_sshd_privseparation_mode }}"
+        expected_owner: "{{ __run_sshd_privseparation_owner }}"
+        expected_group: "{{ __run_sshd_privseparation_group }}"
+
+      - path: "{{ __run_sshd_hostkey_rsa_file }}"
+        os_matrix_key: "hostkey_mode"
+        expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
+
+      - path: "{{ __run_sshd_hostkey_ecdsa_file }}"
+        os_matrix_key: "hostkey_mode"
+        expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
+
+      - path: "{{ __run_sshd_hostkey_ed25519_file }}"
+        os_matrix_key: "hostkey_mode"
+        expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
+
+
+- name: "Molecule | Verify | Stat all paths to verify"
+  ansible.builtin.stat:
+    path: "{{ item['path'] }}"
+  loop: "{{ __testing_paths_to_verify }}"
+  loop_control:
+    label: "{{ item['path'] }}"
+  register: __testing_stat_results
+  failed_when: false
+
+
+- name: "Molecule | Verify | Build platform key for matrix lookup"
+  ansible.builtin.set_fact:
+    __testing_platform_key: "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+
+
+# Verify: Role permissions match OS package defaults (static matrix)
+#
+# The static permission matrix below contains known-good values determined by
+# installing openssh-server fresh on each OS and recording the default
+# permissions.
+# Values determined by fresh openssh installation on each distribution+version.
+# Keys use distribution name + major version (ansible_distribution_major_version).
+# See prepare/all.yml for instructions on how to update / determine values for
+# new OSes.
+- name: "Molecule | Verify | Define OS permission matrix"
+  ansible.builtin.set_fact:
+    __testing_os_permission_matrix:
+      # Debian family
+      "Debian-12":
+        config_file_mode: "0644"
+        config_dropin_dir_mode: "0755"
+        config_dropin_file_mode: "0644"
+        hostkey_mode: "0600"
+        privseparation_mode: "0755"
+      "Debian-13":
+        config_file_mode: "0644"
+        config_dropin_dir_mode: "0755"
+        config_dropin_file_mode: "0644"
+        hostkey_mode: "0600"
+        privseparation_mode: "0755"
+      "Ubuntu-22":
+        config_file_mode: "0644"
+        config_dropin_dir_mode: "0755"
+        config_dropin_file_mode: "0644"
+        hostkey_mode: "0600"
+        privseparation_mode: "0755"
+      "Ubuntu-24":
+        config_file_mode: "0644"
+        config_dropin_dir_mode: "0755"
+        config_dropin_file_mode: "0644"
+        hostkey_mode: "0600"
+        privseparation_mode: "0755"
+      # RedHat family
+      "Fedora-42":
+        config_file_mode: "0600"
+        config_dropin_dir_mode: "0700"
+        config_dropin_file_mode: "0600"
+        hostkey_mode: "0600"
+        privseparation_mode: "0711"
+      "Fedora-43":
+        config_file_mode: "0600"
+        config_dropin_dir_mode: "0700"
+        config_dropin_file_mode: "0600"
+        hostkey_mode: "0600"
+        privseparation_mode: "0711"
+      "AlmaLinux-9":
+        config_file_mode: "0600"
+        config_dropin_dir_mode: "0700"
+        config_dropin_file_mode: "0600"
+        hostkey_mode: "0600"
+        privseparation_mode: "0711"
+      "AlmaLinux-10":
+        config_file_mode: "0600"
+        config_dropin_dir_mode: "0700"
+        config_dropin_file_mode: "0600"
+        hostkey_mode: "0600"
+        privseparation_mode: "0711"
+      "CentOS-9":
+        config_file_mode: "0600"
+        config_dropin_dir_mode: "0700"
+        config_dropin_file_mode: "0600"
+        hostkey_mode: "0600"
+        privseparation_mode: "0711"
+      "CentOS-10":
+        config_file_mode: "0600"
+        config_dropin_dir_mode: "0700"
+        config_dropin_file_mode: "0600"
+        hostkey_mode: "0600"
+        privseparation_mode: "0711"
+      # SUSE family
+      "openSUSE Leap-16":
+        config_file_mode: "0640"
+        config_dropin_dir_mode: "0755"
+        config_dropin_file_mode: "0640"
+        hostkey_mode: "0600"
+        privseparation_mode: "0555"
+
+
+# Fail if platform is not in the known permission matrix to ensure developers
+# add expected values for new OSes/versions.
+- name: "Molecule | Verify | Fail if platform not in permission verification matrix"
+  ansible.builtin.fail:
+    msg: |
+      Platform '{{ __testing_platform_key }}' is not defined in the permission verification matrix.
+
+      To add support for this platform:
+      1. Start a molecule container: molecule login --host={{ inventory_hostname }}
+      2. Purge openssh and remove config directories:
+         - Debian/Ubuntu specific:
+           apt purge -y openssh-server
+         - Red Hat/Fedora specific:
+           dnf remove -y openssh-server
+         - SUSE specific:
+           zypper remove -y openssh-server
+         - All:
+           rm -rf /etc/ssh /usr/etc/ssh
+      3. Reinstall openssh-server fresh:
+         - Debian/Ubuntu:
+           apt update && apt install -y openssh-server
+         - Red Hat/Fedora:
+           dnf install -y openssh-server
+         - SUSE:
+           zypper install -y openssh-server
+      4. Restart sshd (may (re)create privilege separation dir):
+         systemctl restart sshd.service
+      5. Check the default permissions:
+         - All:
+           stat -c '%a %n' /etc/ssh/sshd_config /etc/ssh/sshd_config.d /etc/ssh/ssh_host_*_key 2>/dev/null
+         - Red Hat/Fedora specific:
+           stat -c '%a %n' /usr/share/empty.sshd 2>/dev/null
+         - Debian/Ubuntu specific:
+           stat -c '%a %n' /run/sshd 2>/dev/null
+         - openSUSE specific:
+           stat -c '%a %n' /usr/etc/ssh/sshd_config 2>/dev/null
+           stat -c '%a %n' /var/lib/empty 2>/dev/null
+      6. Add the values to __testing_os_permission_matrix above.
+  when:
+    - __testing_platform_key not in __testing_os_permission_matrix.keys()
+
+
+- name: "Molecule | Verify | Build permission verification list"
+  ansible.builtin.set_fact:
+    __testing_permissions: |
+      {% set items = [] %}
+      {% for i in range(__testing_paths_to_verify | length) %}
+      {%   set spec = __testing_paths_to_verify[i] %}
+      {%   set result = __testing_stat_results['results'][i] %}
+      {%   if result['stat']['exists'] | default(false) %}
+      {%     set expected_mode_os = __testing_os_permission_matrix[__testing_platform_key][spec['os_matrix_key']]
+               if spec['os_matrix_key'] else none %}
+      {%     set _ = items.append({
+               'path': spec['path'],
+               'mode': result['stat']['mode'],
+               'expected_mode_role': __testing_mode_map[spec['expected_mode_role']],
+               'expected_mode_os': expected_mode_os,
+               'owner': result['stat']['pw_name'] | default(''),
+               'expected_owner': spec['expected_owner'] | default(''),
+               'group': result['stat']['gr_name'] | default(''),
+               'expected_group': spec['expected_group'] | default('')
+             }) %}
+      {%   endif %}
+      {% endfor %}
+      {{ items }}
+
+
+- name: "Molecule | Verify | Assert permissions match role variables"
+  ansible.builtin.assert:
+    that:
+      - item['mode'] == item['expected_mode_role']
+      - item['owner'] == item['expected_owner'] or item['expected_owner'] == ''
+      - item['group'] == item['expected_group'] or item['expected_group'] == ''
+    fail_msg: >-
+      {{ item['path'] }} permissions mismatch with role variables.
+      Expected: mode={{ item['expected_mode_role'] }}, owner={{ item['expected_owner'] }}, group={{ item['expected_group'] }}.
+      Got: mode={{ item['mode'] }}, owner={{ item['owner'] }}, group={{ item['group'] }}.
+    success_msg: "{{ item['path'] }} OK ({{ item['mode'] }})"
+  loop: "{{ __testing_permissions }}"
+  loop_control:
+    label: "{{ item['path'] }}"
+
+
+- name: "Molecule | Verify | Assert permissions match OS defaults"
+  ansible.builtin.assert:
+    that:
+      - item['mode'] == item['expected_mode_os']
+    fail_msg: >-
+      {{ item['path'] }} mode differs from OS default!
+      Current: {{ item['mode'] }}. OS default ({{ __testing_platform_key }}): {{ item['expected_mode_os'] }}.
+      Update role vars or __testing_os_permission_matrix if OS defaults changed.
+    success_msg: "{{ item['path'] }} matches OS default ({{ item['mode'] }})"
+  loop: "{{ __testing_permissions | selectattr('expected_mode_os', 'defined') | rejectattr('expected_mode_os', 'none') | list }}"
+  loop_control:
+    label: "{{ item['path'] }}"
+
+
+- name: "Molecule | Verify | Display permissions verification summary"
+  ansible.builtin.debug:
+    msg: |
+      === Permission Verification Summary ===
+      Platform: {{ __testing_platform_key }}
+
+      Expected OS defaults (from static matrix):
+        config_file_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['config_file_mode'] }}
+        config_dropin_dir_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['config_dropin_dir_mode'] }}
+        hostkey_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['hostkey_mode'] }}
+        privseparation_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['privseparation_mode'] }}
+
+      Verified paths:
+      {% for perm in __testing_permissions %}
+        - {{ perm['path'] }}: {{ perm['mode'] }} (expected: {{ perm['expected_mode_role'] }})
+      {% endfor %}
+    verbosity: 1

@@ -140,19 +140,22 @@
 
 # Remember: It is not possible to overwrite values in the sshd configuration,
 # first occurrence wins.
-- name: "Config | Default | Ensure additional config options take precedence by commenting out duplicates in main config"
+- name: "Config | Default | Comment out duplicates in main sshd config (if any) to ensure additional config precedence"
   ansible.builtin.replace:
     path: "{{ __run_sshd_config_file }}"
     # Notes on the regex:
-    # - {{ __run_sshd_additional_options | join("|") }} will result in something like
+    # - {{ __run_sshd_additional_options | join('|') }} will result in something like
     #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms\
     # - Include has to be excluded from commenting as it can exists multiple times.
     # - When options are joined with '|', an empty (whitespace-only) option would
-    #   produce patterns like 'HostKey||LogLevel', where '||' matches an empty
-    #   string at any position. The 'select' filter prevents this. Even though we
-    #   already ensure that empty options do not enter __run_sshd_additional_options,
-    #   this provides an extra layer of safety.
-    regexp: '^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_additional_options | select | join("|") }})(.*)'
+    #   produce patterns like 'foo||bar', where '||' matches an empty string at any
+    #   position. The 'select' filter prevents this.
+    #   Even though we already ensure that empty options do not enter
+    #   __run_sshd_additional_options, this provides an extra layer of safety.
+    # - (?=[\t ]|$) is a safeguard to prevent partial option matches (e.g., 'Foo'
+    #   accidentally matching 'FooBar' if such a token appeared).
+    regexp: >-
+      ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_additional_options | select | join('|') }})(?=[\t ]|$)(.*)
     replace: '#\1\2\3'
     validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
   notify: "run_sshd: restart sshd.service"

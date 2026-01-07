@@ -26,21 +26,45 @@
     success_msg: "SSH service '{{ __run_sshd_sshd_servicename }}' is running"
 
 
+- name: "Molecule | Verify | Read main sshd_config content"
+  ansible.builtin.slurp:
+    src: "{{ __run_sshd_config_file }}"
+  register: __testing_sshd_config
+
+
+- name: "Molecule | Verify | Read main sshd_config content"
+  ansible.builtin.set_fact:
+    __testing_sshd_config_content: "{{ __testing_sshd_config['content'] | b64decode }}"
+
+
+- name: "Molecule | Verify | Assert some Options are commented out in the default daemon config file"
+  ansible.builtin.assert:
+    that:
+      # Line is commented (allow indentation), then optional spaces after '#',
+      # then the directive name as a whole token, then whitespace or EOL.
+      - __testing_sshd_config_content is search('(?m)^[\t ]*#[\t ]*AuthorizedKeysFile(?=[\t ]|$)')
+      - __testing_sshd_config_content is search('(?m)^[\t ]*#[\t ]*Subsystem(?=[\t ]|$)')
+      # Optional: also ensure they are not still active anywhere
+      - not (__testing_sshd_config_content is search('(?m)^(?![\t ]*#)[\t ]*AuthorizedKeysFile(?=[\t ]|$)'))
+      - not (__testing_sshd_config_content is search('(?m)^(?![\t ]*#)[\t ]*Subsystem(?=[\t ]|$)'))
+    fail_msg: >-
+      Expected some options to be commented out in {{ __run_sshd_config_file }}, but one
+      or more were not. Ensure the role's commenting logic ran and these directives exist
+      in the file.
+    success_msg: >-
+      Expected Options are commented out and not present as active directives in
+      {{ __run_sshd_config_file }}.
+
+
 # Regression tests for sshd_config commenting logic.
 # Background: On Fedora 43, the 50-redhat.conf contains a TAB-indented line
 # which caused empty strings to enter the options list. When joined with '|',
 # this created patterns like 'Port||HostKey' where '||' matches empty strings,
 # causing every line to be re-commented on each run (adding '#' repeatedly).
-- name: "Molecule | Verify | Read main sshd_config content"
-  ansible.builtin.slurp:
-    src: "{{ __run_sshd_config_file }}"
-  register: __testing_sshd_config_content
-
-
 - name: "Molecule | Verify | Check for double-commented lines in sshd_config"
   ansible.builtin.set_fact:
     __testing_double_commented_lines: >-
-      {{ (__testing_sshd_config_content['content'] | b64decode).split('\n')
+      {{ (__testing_sshd_config_content).split('\n')
          | select('match', '^##')
          | list }}
 
@@ -56,30 +80,21 @@
     success_msg: "No double-commented lines found - commenting regex is idempotent"
 
 
-- name: "Molecule | Verify | Check that Include directive is not commented out"
-  ansible.builtin.shell: |
-    grep -c '^Include ' {{ __run_sshd_config_file }} || echo "0"
-  args:
-    executable: "/bin/bash"
-  register: __testing_include_count
-  changed_when: false
-
-
 - name: "Molecule | Verify | Assert Include directive exists and is active"
   ansible.builtin.assert:
     that:
-      - __testing_include_count.stdout | int > 0
+      - __testing_sshd_config_content is search('(?m)^(?![ \t]*#)[ \t]*Include(?=[ \t]|$)')
     fail_msg: >-
       No active 'Include' directive found in {{ __run_sshd_config_file }}.
-      The Include directive should not be commented out.
-    success_msg: "Include directive is present and active"
+    success_msg: >-
+      Include directive is present and active in {{ __run_sshd_config_file }}.
 
 
 - name: "Molecule | Verify | Extract configured SSH port"
   ansible.builtin.set_fact:
     __testing_configured_ssh_port: >-
       {{
-        __run_sshd_effective_sshd_settings.Port | default(22) | int
+        __run_sshd_effective_sshd_settings['Port'] | default(22) | int
         if (__run_sshd_effective_sshd_settings is defined and
             __run_sshd_effective_sshd_settings['Port'] is defined)
         else 22
@@ -94,7 +109,7 @@
 
 - name: "Molecule | Verify | Run ssh-audit against localhost on configured port"
   ansible.builtin.shell: |-
-    ssh-audit localhost:{{ __testing_configured_ssh_port }} -jj > /tmp/ssh-audit-result.json
+    ssh-audit localhost:{{ __testing_configured_ssh_port | int }} -jj > /tmp/ssh-audit-result.json
   args:
     executable: "/bin/bash"
   register: __testing_ssh_audit_run

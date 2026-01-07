@@ -86,6 +86,11 @@
 
 ### SSHD specific
 
+
 - name: "Init | Merge user and default settings"
   ansible.builtin.set_fact:
-    __run_sshd_effective_sshd_settings: "{{ __run_sshd_sshd_settings_defaults | ansible.builtin.combine(run_sshd_sshd_settings) }}"
+    __run_sshd_effective_sshd_settings: >-
+      {{
+        __run_sshd_sshd_settings_defaults
+        | ansible.builtin.combine(run_sshd_sshd_settings)
+      }}

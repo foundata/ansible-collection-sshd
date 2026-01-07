@@ -79,9 +79,9 @@
   ansible.builtin.set_fact:
     __testing_configured_ssh_port: >-
       {{
-        __run_sshd_merged_sshd_settings.Port | default(22) | int
-        if (__run_sshd_merged_sshd_settings is defined and
-            __run_sshd_merged_sshd_settings['Port'] is defined)
+        __run_sshd_effective_sshd_settings.Port | default(22) | int
+        if (__run_sshd_effective_sshd_settings is defined and
+            __run_sshd_effective_sshd_settings['Port'] is defined)
         else 22
       }}
 

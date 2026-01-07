@@ -6,8 +6,8 @@
   ansible.builtin.set_fact:
     __run_sshd_configured_hostkeys: >-
       {{
-        (__run_sshd_merged_sshd_settings.HostKey is string)
-        | ternary([__run_sshd_merged_sshd_settings.HostKey], __run_sshd_merged_sshd_settings.HostKey)
+        (__run_sshd_effective_sshd_settings.HostKey is string)
+        | ternary([__run_sshd_effective_sshd_settings.HostKey], __run_sshd_effective_sshd_settings.HostKey)
         | default([])
       }}
 
@@ -38,7 +38,7 @@
 
 - name: "Config | Default | Print config additional config file (merged defaults with passed values)"
   ansible.builtin.debug:
-    var: __run_sshd_merged_sshd_settings
+    var: __run_sshd_effective_sshd_settings
     verbosity: 4
 
 

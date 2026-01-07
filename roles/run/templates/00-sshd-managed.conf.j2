@@ -1,6 +1,6 @@
 # {{ ansible_managed }}
 
-{% for key, value in __run_sshd_merged_sshd_settings.items() %}
+{% for key, value in __run_sshd_effective_sshd_settings.items() %}
 {% if value is sameas true %}
 {{ key }} yes
 {% elif value is sameas false %}

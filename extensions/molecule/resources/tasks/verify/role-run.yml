@@ -410,22 +410,3 @@
   loop: "{{ __testing_permissions | selectattr('expected_mode_os', 'defined') | rejectattr('expected_mode_os', 'none') | list }}"
   loop_control:
     label: "{{ item['path'] }}"
-
-
-- name: "Molecule | Verify | Display permissions verification summary"
-  ansible.builtin.debug:
-    msg: |
-      === Permission Verification Summary ===
-      Platform: {{ __testing_platform_key }}
-
-      Expected OS defaults (from static matrix):
-        config_file_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['config_file_mode'] }}
-        config_dropin_dir_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['config_dropin_dir_mode'] }}
-        hostkey_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['hostkey_mode'] }}
-        privseparation_mode: {{ __testing_os_permission_matrix[__testing_platform_key]['privseparation_mode'] }}
-
-      Verified paths:
-      {% for perm in __testing_permissions %}
-        - {{ perm['path'] }}: {{ perm['mode'] }} (expected: {{ perm['expected_mode_role'] }})
-      {% endfor %}
-    verbosity: 1

@@ -32,7 +32,7 @@ See `dependencies` in [`galaxy.yml`](./galaxy.yml).
 ## Licensing, copyright<a id="licensing-copyright"></a>
 
 <!--REUSE-IgnoreStart-->
-Copyright (c) 2025 foundata GmbH
+Copyright (c) 2025, 2026 foundata GmbH
 
 This project is licensed under the GNU General Public License v3.0 or later (SPDX-License-Identifier: `GPL-3.0-or-later`), see [`LICENSES/GPL-3.0-or-later.txt`](LICENSES/GPL-3.0-or-later.txt) for the full text.
 

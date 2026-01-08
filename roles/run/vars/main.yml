@@ -154,9 +154,9 @@ __run_sshd_sshd_settings_defaults:
   # (instead of a separate binary and process)
   Subsystem: "sftp internal-sftp -f AUTHPRIV -l INFO"
   # Cryptography: Modern algorithms only based on best practices from:
-  # - https://cipherli.st/
-  # - https://stribika.github.io/2015/01/04/secure-secure-shell.html
   # - https://github.com/arthepsy/ssh-audit, results of ./ssh-audit.py runs
+  # - https://infosec.mozilla.org/guidelines/openssh
+  # - https://stribika.github.io/2015/01/04/secure-secure-shell.html
   # - https://ssh-comparison.quendi.de/comparison/cipher.html
   KexAlgorithms: "curve25519-sha256@libssh.org"
   Ciphers: "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"

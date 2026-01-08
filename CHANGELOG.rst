@@ -4,6 +4,23 @@ foundata.sshd Ansible collection Release Notes
 
 .. contents:: Topics
 
+v1.3.0
+======
+
+Release Summary
+---------------
+
+Release Date: 2026-01-08
+
+Maintenance release.
+
+Minor Changes
+-------------
+
+- Molecule: Added openSUSE Leap 16.0 as a test target platform.
+- ``foundata.sshd.run``: Added openSUSE Leap 16.0 as a supported platform.
+- ``foundata.sshd.run``: Configuration file permissions now match each operating system's default behavior. Red Hat-like systems retain restrictive permissions (0600/0700), while Debian-like and SUSE systems use their standard defaults (typically 0644/0755 for config files and directories).
+
 v1.2.1
 ======
 
@@ -17,7 +34,13 @@ Bugfix release.
 Bugfixes
 --------
 
-- run role - Fixed a bug where the regex for commenting out duplicate sshd_config options would re-match already-commented lines on every run, prepending additional ``#`` characters. This occurred on Fedora 43 where ``/etc/ssh/sshd_config.d/50-redhat.conf`` contains a TAB-indented ``AcceptEnv`` line, causing an empty string to enter the options list. When joined with ``|``, patterns like ``Port||HostKey`` matched empty strings at any position, affecting all lines.
+- run role - Fixed a bug where the regex for commenting out duplicate sshd_config
+  options would re-match already-commented lines on every run, prepending
+  additional ``#`` characters. This occurred on Fedora 43 where
+  ``/etc/ssh/sshd_config.d/50-redhat.conf`` contains a TAB-indented
+  ``AcceptEnv`` line, causing an empty string to enter the options list.
+  When joined with ``|``, patterns like ``Port||HostKey`` matched empty
+  strings at any position, affecting all lines.
 
 v1.2.0
 ======

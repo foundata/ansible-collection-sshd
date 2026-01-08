@@ -1,6 +1,21 @@
 ---
 ancestor: null
 releases:
+  1.3.0:
+    changes:
+      minor_changes:
+        - 'Molecule: Added openSUSE Leap 16.0 as a test target platform.'
+        - '``foundata.sshd.run``: Added openSUSE Leap 16.0 as a supported platform.'
+        - '``foundata.sshd.run``: Configuration file permissions now match each operating
+          system''s default behavior. Red Hat-like systems retain restrictive permissions
+          (0600/0700), while Debian-like and SUSE systems use their standard defaults
+          (typically 0644/0755 for config files and directories).'
+      release_summary: "Release Date: \n\nMaintenance release.\n"
+    fragments:
+      - 1.3.0-release.yaml
+      - platform-add-opensuse-leap-160.yaml
+      - run-role-adjust-fs-permissions.yaml
+    release_date: '2026-01-08'
   1.2.1:
     changes:
       bugfixes:

@@ -14,12 +14,12 @@ __run_sshd_packages_install:
 __run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
 
 # On openSUSE Leap, sshd(8) reads configuration data from /etc/ssh/sshd_config
-# and /usr/etc/ssh/sshd_config if the file does not exist (cf.
+# or /usr/etc/ssh/sshd_config if /etc/ssh/sshd_config does not exist (cf.
 # https://manpages.opensuse.org/Leap-16.0/openssh-server/sshd_config.5.en.html)
-# By default, /etc/ssh/sshd_config is not existing on openSUSE Leap >= v16.0.
-# FIXME to be implemented
-# Use this as the default; override it with /etc/ssh/sshd_config if present via
-# fact later.
+# Defaults on openSUSE Leap >= v16.0:
+# - /usr/etc/ssh/sshd_config: existing
+# - /etc/ssh/sshd_config: not existing
+# This value gets adjusted if needed (see tasks/config/suse.yml).
 __run_sshd_config_file: "/usr/etc/ssh/sshd_config"
 __run_sshd_config_file_mode: "u=rw,g=r,o=" # 0640
 

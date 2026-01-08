@@ -1,0 +1,25 @@
+# Configuration: Tasks specific to: SUSE (os_family or distribution)
+#
+# Only tasks specific to the platform and its functionality should be included
+# here. Tasks in this file will be executed before those defined in
+# config/default.yml.
+
+---
+
+# On openSUSE Leap, sshd(8) reads configuration data from /etc/ssh/sshd_config
+# or /usr/etc/ssh/sshd_config if /etc/ssh/sshd_config does not exist (cf.
+# https://manpages.opensuse.org/Leap-16.0/openssh-server/sshd_config.5.en.html)
+- name: "Config | Suse | Check if '/etc/ssh/sshd_config' exists"
+  ansible.builtin.stat:
+    path: "/etc/ssh/sshd_config"
+  register: __run_sshd_etc_config_stat
+  when:
+    - __run_sshd_config_file != "/etc/ssh/sshd_config"
+
+
+- name: "Config | Suse | Override config file path if '/etc/ssh/sshd_config' exists"
+  ansible.builtin.set_fact:
+    __run_sshd_config_file: "/etc/ssh/sshd_config"
+  when:
+    - __run_sshd_config_file != "/etc/ssh/sshd_config"
+    - __run_sshd_etc_config_stat['stat']['exists'] | default(false)

@@ -79,7 +79,7 @@
     path: "{{ __run_sshd_config_dropin_dir_path }}/00-ansible.conf"
     state: "absent"
   when:
-    - __run_sshd_config_dropin_file_path != "{{ __run_sshd_config_dropin_dir_path }}/00-ansible.conf"
+    - __run_sshd_config_dropin_file_path != (__run_sshd_config_dropin_dir_path ~ '/00-ansible.conf')
   notify:
     - "run_sshd: restart sshd.service"
 

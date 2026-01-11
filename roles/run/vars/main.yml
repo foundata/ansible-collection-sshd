@@ -187,9 +187,9 @@ __run_sshd_hostkey_rsa_file_path: "/etc/ssh/ssh_host_rsa_key"
 __run_sshd_hostkey_dsa_file_path: "/etc/ssh/ssh_host_dsa_key"
 __run_sshd_hostkey_ecdsa_file_path: "/etc/ssh/ssh_host_ecdsa_key"
 __run_sshd_hostkey_ed25519_file_path: "/etc/ssh/ssh_host_ed25519_key"
-__run_sshd_hostkey_owner: "{{ __run_sshd_config_file_owner }}"
-__run_sshd_hostkey_group: "{{ __run_sshd_config_file_group }}"
-__run_sshd_hostkey_mode: "{{ __run_sshd_config_file_mode }}"
+__run_sshd_hostkey_files_owner: "{{ __run_sshd_config_file_owner }}"
+__run_sshd_hostkey_files_group: "{{ __run_sshd_config_file_group }}"
+__run_sshd_hostkey_files_mode: "{{ __run_sshd_config_file_mode }}"
 
 
 # Privilege separation directory configuration for SSH daemon. These variables

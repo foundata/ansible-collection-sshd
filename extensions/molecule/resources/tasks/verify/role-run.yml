@@ -246,15 +246,15 @@
 
       - path: "{{ __run_sshd_hostkey_rsa_file_path }}"
         os_matrix_key: "hostkey_mode"
-        expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
+        expected_mode_role: "{{ __run_sshd_hostkey_files_mode }}"
 
       - path: "{{ __run_sshd_hostkey_ecdsa_file_path }}"
         os_matrix_key: "hostkey_mode"
-        expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
+        expected_mode_role: "{{ __run_sshd_hostkey_files_mode }}"
 
       - path: "{{ __run_sshd_hostkey_ed25519_file_path }}"
         os_matrix_key: "hostkey_mode"
-        expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
+        expected_mode_role: "{{ __run_sshd_hostkey_files_mode }}"
 
 
 - name: "Molecule | Verify | Stat all paths to verify"

@@ -14,7 +14,7 @@ __run_sshd_config_dropin_dir_mode: "u=rwx,g=rx,o=rx" # 0755
 
 __run_sshd_config_dropin_file_mode: "{{ __run_sshd_config_file_mode }}"
 
-__run_sshd_hostkey_mode: "u=rw,g=,o=" # 0600
+__run_sshd_hostkey_files_mode: "u=rw,g=,o=" # 0600
 
 # Check vars/main.yml for hints on determining the privilege separation dir path
 __run_sshd_privseparation_dir_path: "/run/sshd"

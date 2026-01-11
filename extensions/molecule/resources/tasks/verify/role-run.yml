@@ -28,7 +28,7 @@
 
 - name: "Molecule | Verify | Read main sshd_config content"
   ansible.builtin.slurp:
-    src: "{{ __run_sshd_config_file }}"
+    src: "{{ __run_sshd_config_file_path }}"
   register: __testing_sshd_config
 
 
@@ -48,12 +48,11 @@
       - not (__testing_sshd_config_content is search('(?m)^(?![\t ]*#)[\t ]*AuthorizedKeysFile(?=[\t ]|$)'))
       - not (__testing_sshd_config_content is search('(?m)^(?![\t ]*#)[\t ]*Subsystem(?=[\t ]|$)'))
     fail_msg: >-
-      Expected some options to be commented out in {{ __run_sshd_config_file }}, but one
-      or more were not. Ensure the role's commenting logic ran and these directives exist
-      in the file.
+      Expected some options to be commented out in {{ __run_sshd_config_file_path }}, but one or more
+      were not. Ensure the role's commenting logic ran and these directives exist in the file.
     success_msg: >-
       Expected Options are commented out and not present as active directives in
-      {{ __run_sshd_config_file }}.
+      {{ __run_sshd_config_file_path }}.
 
 
 # Regression tests for sshd_config commenting logic.
@@ -75,7 +74,7 @@
       - __testing_double_commented_lines | length == 0
     fail_msg: >-
       Found {{ __testing_double_commented_lines | length }} double-commented lines in
-      {{ __run_sshd_config_file }}. This indicates the commenting regex matched
+      {{ __run_sshd_config_file_path }}. This indicates the commenting regex matched
       already-commented lines. Lines: {{ __testing_double_commented_lines[:5] }}
     success_msg: "No double-commented lines found - commenting regex is idempotent"
 
@@ -85,9 +84,9 @@
     that:
       - __testing_sshd_config_content is search('(?m)^(?![ \t]*#)[ \t]*Include(?=[ \t]|$)')
     fail_msg: >-
-      No active 'Include' directive found in {{ __run_sshd_config_file }}.
+      No active 'Include' directive found in {{ __run_sshd_config_file_path }}.
     success_msg: >-
-      Include directive is present and active in {{ __run_sshd_config_file }}.
+      Include directive is present and active in {{ __run_sshd_config_file_path }}.
 
 
 - name: "Molecule | Verify | Extract configured SSH port"
@@ -180,39 +179,39 @@
   ansible.builtin.set_fact:
     __testing_paths_to_verify:
 
-      - path: "{{ __run_sshd_config_file }}"
+      - path: "{{ __run_sshd_config_file_path }}"
         os_matrix_key: "config_file_mode"
         expected_mode_role: "{{ __run_sshd_config_file_mode }}"
         expected_owner: "{{ __run_sshd_config_file_owner }}"
         expected_group: "{{ __run_sshd_config_file_group }}"
 
-      - path: "{{ __run_sshd_config_dropin_dir }}"
+      - path: "{{ __run_sshd_config_dropin_dir_path }}"
         os_matrix_key: "config_dropin_dir_mode"
         expected_mode_role: "{{ __run_sshd_config_dropin_dir_mode }}"
         expected_owner: "{{ __run_sshd_config_dropin_dir_owner }}"
         expected_group: "{{ __run_sshd_config_dropin_dir_group }}"
 
-      - path: "{{ __run_sshd_config_dropin_file }}"
+      - path: "{{ __run_sshd_config_dropin_file_path }}"
         os_matrix_key: "config_dropin_file_mode"
         expected_mode_role: "{{ __run_sshd_config_dropin_file_mode }}"
         expected_owner: "{{ __run_sshd_config_dropin_file_owner }}"
         expected_group: "{{ __run_sshd_config_dropin_file_group }}"
 
-      - path: "{{ __run_sshd_privseparation_dir }}"
+      - path: "{{ __run_sshd_privseparation_dir_path }}"
         os_matrix_key: "privseparation_mode"
-        expected_mode_role: "{{ __run_sshd_privseparation_mode }}"
-        expected_owner: "{{ __run_sshd_privseparation_owner }}"
+        expected_mode_role: "{{ __run_sshd_privseparation_dir_mode }}"
+        expected_owner: "{{ __run_sshd_privseparation_dir_owner }}"
         expected_group: "{{ __run_sshd_privseparation_group }}"
 
-      - path: "{{ __run_sshd_hostkey_rsa_file }}"
+      - path: "{{ __run_sshd_hostkey_rsa_file_path }}"
         os_matrix_key: "hostkey_mode"
         expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
 
-      - path: "{{ __run_sshd_hostkey_ecdsa_file }}"
+      - path: "{{ __run_sshd_hostkey_ecdsa_file_path }}"
         os_matrix_key: "hostkey_mode"
         expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
 
-      - path: "{{ __run_sshd_hostkey_ed25519_file }}"
+      - path: "{{ __run_sshd_hostkey_ed25519_file_path }}"
         os_matrix_key: "hostkey_mode"
         expected_mode_role: "{{ __run_sshd_hostkey_mode }}"
 

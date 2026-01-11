@@ -110,7 +110,7 @@ __run_sshd_sshd_settings_defaults:
   Port: 22
   # Security: Strong host key cryptography only (=ed25519 and nothing else)
   HostKey:
-    - "{{ __run_sshd_hostkey_ed25519_file }}"
+    - "{{ __run_sshd_hostkey_ed25519_file_path }}"
   # Auditing: Record key fingerprints on login for authentication tracking
   LogLevel: "VERBOSE"
   # Authentication timing: Close inactive authentication attempts
@@ -167,25 +167,25 @@ __run_sshd_sshd_settings_defaults:
 # These variables define the different locations of configuration files, the
 # include directory, and the Ansible-managed configuration file, ensuring
 # consistent file handling across distributions.
-__run_sshd_config_file: "/etc/ssh/sshd_config"
+__run_sshd_config_file_path: "/etc/ssh/sshd_config"
 __run_sshd_config_file_owner: "root"
 __run_sshd_config_file_group: "root"
 __run_sshd_config_file_mode: "u=rw,g=,o=" # 0600
 
-__run_sshd_config_dropin_dir: "/etc/ssh/sshd_config.d"
+__run_sshd_config_dropin_dir_path: "/etc/ssh/sshd_config.d"
 __run_sshd_config_dropin_dir_owner: "{{ __run_sshd_config_file_owner }}"
 __run_sshd_config_dropin_dir_group: "{{ __run_sshd_config_file_group }}"
 __run_sshd_config_dropin_dir_mode: "u=rwx,g=,o=" # 0700
 
-__run_sshd_config_dropin_file: "{{ __run_sshd_config_dropin_dir }}/00-ansible.conf" # 00- prefix to ensure precedence / file gets included early
+__run_sshd_config_dropin_file_path: "{{ __run_sshd_config_dropin_dir_path }}/00-ansible.conf" # 00- prefix to ensure precedence / file gets included early
 __run_sshd_config_dropin_file_owner: "{{ __run_sshd_config_file_owner }}"
 __run_sshd_config_dropin_file_group: "{{ __run_sshd_config_file_group }}"
 __run_sshd_config_dropin_file_mode: "{{ __run_sshd_config_file_mode }}"
 
-__run_sshd_hostkey_rsa_file: "/etc/ssh/ssh_host_rsa_key"
-__run_sshd_hostkey_dsa_file: "/etc/ssh/ssh_host_dsa_key"
-__run_sshd_hostkey_ecdsa_file: "/etc/ssh/ssh_host_ecdsa_key"
-__run_sshd_hostkey_ed25519_file: "/etc/ssh/ssh_host_ed25519_key"
+__run_sshd_hostkey_rsa_file_path: "/etc/ssh/ssh_host_rsa_key"
+__run_sshd_hostkey_dsa_file_path: "/etc/ssh/ssh_host_dsa_key"
+__run_sshd_hostkey_ecdsa_file_path: "/etc/ssh/ssh_host_ecdsa_key"
+__run_sshd_hostkey_ed25519_file_path: "/etc/ssh/ssh_host_ed25519_key"
 __run_sshd_hostkey_owner: "{{ __run_sshd_config_file_owner }}"
 __run_sshd_hostkey_group: "{{ __run_sshd_config_file_group }}"
 __run_sshd_hostkey_mode: "{{ __run_sshd_config_file_mode }}"
@@ -207,18 +207,18 @@ __run_sshd_hostkey_mode: "{{ __run_sshd_config_file_mode }}"
 #      so restart and check the logs:
 #      systemctl restart sshd.service
 #      journalctl -xeu sshd.service
-__run_sshd_privseparation_dir: null
-__run_sshd_privseparation_owner: "root"
-__run_sshd_privseparation_group: "root"
-__run_sshd_privseparation_mode: "u=rwx,g=x,o=x" # 0711
+__run_sshd_privseparation_dir_path: null
+__run_sshd_privseparation_dir_owner: "root"
+__run_sshd_privseparation_dir_group: "root"
+__run_sshd_privseparation_dir_mode: "u=rwx,g=x,o=x" # 0711
 
 
 # SSH daemon service name and executable paths.
 # These variables define the systemd service name for SSH daemon
 # and the paths to the sshd executables for service management and validation.
 __run_sshd_sshd_servicename: "sshd.service"
-__run_sshd_sshd_executable: "/usr/sbin/sshd"
-__run_sshd_sshkeygen_executable: "/usr/bin/ssh-keygen"
+__run_sshd_sshd_exec_path: "/usr/sbin/sshd"
+__run_sshd_sshkeygen_exec_path: "/usr/bin/ssh-keygen"
 
 
 ### Override defaults of dependencies used by this role (if any).

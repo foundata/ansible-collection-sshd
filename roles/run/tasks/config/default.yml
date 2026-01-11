@@ -27,7 +27,7 @@
   # /usr/libexec/openssh/sshd-keygen would be a more flexible alternative as it
   # accepts specific key types as arguments, but it is usually only available on
   # Red Hat-based distributions.
-  ansible.builtin.command: "{{ __run_sshd_sshkeygen_executable }} -A"
+  ansible.builtin.command: "{{ __run_sshd_sshkeygen_exec_path }} -A"
   when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | list | length > 0
   changed_when:
     - __run_sshd_sshkeygen_result['rc'] == 0
@@ -44,7 +44,7 @@
 
 - name: "Config | Default | Ensure drop-in config directory exists with proper permissions"
   ansible.builtin.file:
-    path: "{{ __run_sshd_config_dropin_dir }}"
+    path: "{{ __run_sshd_config_dropin_dir_path }}"
     state: "directory"
     owner: "{{ __run_sshd_config_dropin_dir_owner }}"
     group: "{{ __run_sshd_config_dropin_dir_group }}"
@@ -55,7 +55,7 @@
 - name: "Config | Default | Create drop-in config file"
   ansible.builtin.template:
     src: "00-sshd-managed.conf.j2"
-    dest: "{{ __run_sshd_config_dropin_file }}"
+    dest: "{{ __run_sshd_config_dropin_file_path }}"
     owner: "{{ __run_sshd_config_dropin_file_owner }}"
     group: "{{ __run_sshd_config_dropin_file_group }}"
     mode: "{{ __run_sshd_config_dropin_file_mode }}"
@@ -64,7 +64,7 @@
 
 - name: "Config | Default | Search for sshd drop-in config files"
   ansible.builtin.find:
-    paths: "{{ __run_sshd_config_dropin_dir }}"
+    paths: "{{ __run_sshd_config_dropin_dir_path }}"
     patterns: '^.+\.conf$'
     use_regex: true
     hidden: true
@@ -141,7 +141,7 @@
 
 - name: "Config | Default | Ensure main config file exists with proper permissions"
   ansible.builtin.file:
-    path: "{{ __run_sshd_config_file }}"
+    path: "{{ __run_sshd_config_file_path }}"
     state: "touch"
     owner: "{{ __run_sshd_config_file_owner }}"
     group: "{{ __run_sshd_config_file_group }}"
@@ -152,17 +152,17 @@
 
 - name: "Config | Default | Ensure 'Include' directive exists in main config file"
   ansible.builtin.lineinfile:
-    path: "{{ __run_sshd_config_file }}"
-    line: "Include {{ __run_sshd_config_dropin_dir }}/*.conf"
+    path: "{{ __run_sshd_config_file_path }}"
+    line: "Include {{ __run_sshd_config_dropin_dir_path }}/*.conf"
     state: "present"
-    validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
+    validate: "{{ __run_sshd_sshd_exec_path }} -t -f %s"
   notify: "run_sshd: restart sshd.service"
 
 
 # Remember: It is not possible to overwrite values in the sshd config, first occurrence wins.
 - name: "Config | Default | Comment out duplicates in main config file (if any) to ensure drop-in config precedence"
   ansible.builtin.replace:
-    path: "{{ __run_sshd_config_file }}"
+    path: "{{ __run_sshd_config_file_path }}"
     # Notes on the regex:
     # - {{ __run_sshd_dropin_options | join('|') }} will result in something like
     #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms\
@@ -177,5 +177,5 @@
     regexp: >-
       ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_dropin_options | select | join('|') }})(?=[\t ]|$)(.*)
     replace: '#\1\2\3'
-    validate: "{{ __run_sshd_sshd_executable }} -t -f %s"
+    validate: "{{ __run_sshd_sshd_exec_path }} -t -f %s"
   notify: "run_sshd: restart sshd.service"

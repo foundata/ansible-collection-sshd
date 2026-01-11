@@ -20,7 +20,7 @@ __run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
 # - /usr/etc/ssh/sshd_config: existing
 # - /etc/ssh/sshd_config: not existing
 # This value gets adjusted if needed (see tasks/config/suse.yml).
-__run_sshd_config_file: "/usr/etc/ssh/sshd_config"
+__run_sshd_config_file_path: "/usr/etc/ssh/sshd_config"
 __run_sshd_config_file_mode: "u=rw,g=r,o=" # 0640
 
 __run_sshd_config_dropin_dir_mode: "u=rwx,g=rx,o=rx" # 0755
@@ -30,5 +30,5 @@ __run_sshd_config_dropin_file_mode: "{{ __run_sshd_config_file_mode }}"
 __run_sshd_hostkey_mode: "u=rw,g=,o=" # 0600
 
 # Check vars/main.yml for hints on determining the privilege separation dir path
-__run_sshd_privseparation_dir: "/var/lib/empty"
-__run_sshd_privseparation_mode: "u=rx,g=rx,o=rx" # 0555
+__run_sshd_privseparation_dir_path: "/var/lib/empty"
+__run_sshd_privseparation_dir_mode: "u=rx,g=rx,o=rx" # 0555

@@ -74,3 +74,17 @@ run_sshd_service_state: "enabled"
 # - Default: {}
 run_sshd_sshd_settings:
   {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults
+
+# Filename of the drop-in configuration file to be placed in
+# `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix
+# ensures early loading and thus higher precedence over files with
+# higher-numbered prefixes.
+#
+# If a non-default filename is used, any existing
+# `/etc/ssh/sshd_config.d/00-managed.conf` from previous Ansible runs will be
+# removed automatically to prevent conflicts.
+#
+# - Type: str
+# - Required: No
+# - Default: 00-managed.conf
+run_sshd_config_dropin_file_name: "00-managed.conf"

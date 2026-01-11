@@ -6,3 +6,4 @@
     name: "foundata.sshd.run"
   vars:
     run_sshd_state: "present"
+    run_sshd_config_dropin_file_name: "00-custom-dropin.conf"

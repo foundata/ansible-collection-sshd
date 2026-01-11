@@ -12,6 +12,7 @@ The `foundata.sshd.run` Ansible role (part of the `foundata.sshd` Ansible collec
   - [`run_sshd_autoupgrade`](#variable-run_sshd_autoupgrade)
   - [`run_sshd_service_state`](#variable-run_sshd_service_state)
   - [`run_sshd_sshd_settings`](#variable-run_sshd_sshd_settings)
+  - [`run_sshd_config_dropin_file_name`](#variable-run_sshd_config_dropin_file_name)
 <!-- ANSIBLE DOCSMITH TOC END -->
 - [Example playbooks, using this role](#examples)
 - [Supported tags](#tags)
@@ -47,6 +48,7 @@ The following variables can be configured for this role:
 | `run_sshd_autoupgrade` | `bool` | No | `false` | If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one). |
 | `run_sshd_service_state` | `str` | No | `"enabled"` | Defines the status of the service(s).<br><br>`enabled`: Service is running and will start automatically at boot.<br><br>`disabled`: Service is stopped and will not start automatically at boot.<br><br>`running` Service is running but will not start […](#variable-run_sshd_service_state) |
 | `run_sshd_sshd_settings` | `dict` | No | `{}` | sshd configuration values (additional ones or to overwrite defaults; see `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special cases:<br><br>- […](#variable-run_sshd_sshd_settings) |
+| `run_sshd_config_dropin_file_name` | `str` | No | `"00-managed.conf"` | Filename of the drop-in configuration file to be placed in `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix ensures early loading and thus higher precedence over files with higher-numbered prefixes.<br><br>If a non-default […](#variable-run_sshd_config_dropin_file_name) |
 
 ### `run_sshd_state`<a id="variable-run_sshd_state"></a>
 
@@ -130,6 +132,23 @@ Special cases:
 - **Type**: `dict`
 - **Required**: No
 - **Default**: `{}`
+
+
+
+### `run_sshd_config_dropin_file_name`<a id="variable-run_sshd_config_dropin_file_name"></a>
+
+[*⇑ Back to ToC ⇑*](#toc)
+
+Filename of the drop-in configuration file to be placed in `/etc/ssh/sshd_config.d`.
+Defaults to `00-managed.conf`. The `00-` prefix ensures early loading and thus
+higher precedence over files with higher-numbered prefixes.
+
+If a non-default filename is used, any existing `/etc/ssh/sshd_config.d/00-managed.conf`
+from previous Ansible runs will be removed automatically to prevent conflicts.
+
+- **Type**: `str`
+- **Required**: No
+- **Default**: `"00-managed.conf"`
 
 
 

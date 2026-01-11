@@ -81,3 +81,14 @@ argument_specs:
             This will generate multiple entries in the config file, one per list item.
         type: "dict"
         default: {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults
+
+      run_sshd_config_dropin_file_name:
+        description: |
+          Filename of the drop-in configuration file to be placed in `/etc/ssh/sshd_config.d`.
+          Defaults to `00-managed.conf`. The `00-` prefix ensures early loading and thus
+          higher precedence over files with higher-numbered prefixes.
+
+          If a non-default filename is used, any existing `/etc/ssh/sshd_config.d/00-managed.conf`
+          from previous Ansible runs will be removed automatically to prevent conflicts.
+        type: "str"
+        default: "00-managed.conf"

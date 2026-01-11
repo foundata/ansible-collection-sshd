@@ -1,0 +1,4 @@
+---
+
+minor_changes:
+  - "``foundata.sshd.run``: Add ``run_sshd_config_dropin_file_name`` variable to allow customizing the sshd drop-in configuration filename. Default changed from ``00-ansible.conf`` to ``00-managed.conf`` for consistency with other roles."

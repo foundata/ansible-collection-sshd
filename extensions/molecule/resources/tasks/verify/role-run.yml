@@ -7,6 +7,47 @@
     public: true
 
 
+- name: "Molecule | Verify | Set / overwrite some expected configuration data "
+  ansible.builtin.set_fact:
+    # values have to be in sync with the config set in ../converge/run-role.yml
+    run_sshd_config_dropin_file_name: "00-custom-dropin.conf"
+    __run_sshd_config_dropin_file_path: "{{ __run_sshd_config_dropin_dir_path }}/00-custom-dropin.conf"
+
+
+- name: "Molecule | Verify | Check if sshd drop-in configuration file exists"
+  ansible.builtin.stat:
+    path: "{{ __run_sshd_config_dropin_file_path }}"
+  register: __testing_dropin_file
+
+
+- name: "Molecule | Verify | Assert sshd drop-in configuration file exists"
+  ansible.builtin.assert:
+    that:
+      - __testing_dropin_file['stat']['exists']
+    fail_msg: "The sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' does not exist."
+    success_msg: "The sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' exists."
+
+
+- name: "Molecule | Verify | Check if default sshd drop-in configuration file does exists (if custom filename is used)"
+  ansible.builtin.stat:
+    path: "{{ __run_sshd_config_dropin_file_path_default }}"
+  when:
+    - __run_sshd_config_dropin_file_path != __run_sshd_config_dropin_file_path_default
+  register: __testing_dropin_file_default
+
+
+- name: "Molecule | Verify | Assert default sshd drop-in configuration file does not exists (if custom filename is used)"
+  ansible.builtin.assert:
+    that:
+      - __testing_dropin_file_default['stat']['exists'] is false
+    fail_msg: >-
+      The default sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' exists (even though a custom filename is used).
+    success_msg: >-
+      The default sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' does not exist (valid as custom filename is used).
+  when:
+    - __run_sshd_config_dropin_file_path != __run_sshd_config_dropin_file_path_default
+
+
 - name: "Molecule | Verify | Gather service facts"
   ansible.builtin.service_facts:
 
@@ -201,7 +242,7 @@
         os_matrix_key: "privseparation_mode"
         expected_mode_role: "{{ __run_sshd_privseparation_dir_mode }}"
         expected_owner: "{{ __run_sshd_privseparation_dir_owner }}"
-        expected_group: "{{ __run_sshd_privseparation_group }}"
+        expected_group: "{{ __run_sshd_privseparation_dir_group }}"
 
       - path: "{{ __run_sshd_hostkey_rsa_file_path }}"
         os_matrix_key: "hostkey_mode"

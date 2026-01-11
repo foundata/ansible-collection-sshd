@@ -54,12 +54,34 @@
 
 - name: "Config | Default | Create drop-in config file"
   ansible.builtin.template:
-    src: "00-sshd-managed.conf.j2"
+    src: "00-managed.conf.j2"
     dest: "{{ __run_sshd_config_dropin_file_path }}"
     owner: "{{ __run_sshd_config_dropin_file_owner }}"
     group: "{{ __run_sshd_config_dropin_file_group }}"
     mode: "{{ __run_sshd_config_dropin_file_mode }}"
   notify: "run_sshd: restart sshd.service"
+
+
+- name: "Config | Default | Remove default drop-in config file (if custom filename is used)"
+  ansible.builtin.file:
+    path: "{{ __run_sshd_config_dropin_file_path_default }}"
+    state: "absent"
+  when:
+    - __run_sshd_config_dropin_file_path != __run_sshd_config_dropin_file_path_default
+  notify:
+    - "run_sshd: restart sshd.service"
+
+
+# "00-ansible.conf" was used up until v1.3.0 of this collection's run role and was not configurable. The default
+# filename was renamed, and the old file must be cleaned up (especially since its filename would take precedence).
+- name: "Config | Default | Remove old drop-in config file from previous role versions (if not set as custom filename)"
+  ansible.builtin.file:
+    path: "{{ __run_sshd_config_dropin_dir_path }}/00-ansible.conf"
+    state: "absent"
+  when:
+    - __run_sshd_config_dropin_file_path != "{{ __run_sshd_config_dropin_dir_path }}/00-ansible.conf"
+  notify:
+    - "run_sshd: restart sshd.service"
 
 
 - name: "Config | Default | Search for sshd drop-in config files"

@@ -6,7 +6,9 @@ The `foundata.sshd.run` Ansible role (part of the `foundata.sshd` Ansible collec
 
 ## Table of contents<a id="toc"></a>
 
-- [Features](#features)<!-- ANSIBLE DOCSMITH TOC START -->
+- [Features](#features)
+- [Example playbooks, using this role](#examples)
+- [Supported tags](#tags)<!-- ANSIBLE DOCSMITH TOC START -->
 - [Role variables](#variables)
   - [`run_sshd_state`](#variable-run_sshd_state)
   - [`run_sshd_autoupgrade`](#variable-run_sshd_autoupgrade)
@@ -14,8 +16,6 @@ The `foundata.sshd.run` Ansible role (part of the `foundata.sshd` Ansible collec
   - [`run_sshd_sshd_settings`](#variable-run_sshd_sshd_settings)
   - [`run_sshd_config_dropin_file_name`](#variable-run_sshd_config_dropin_file_name)
 <!-- ANSIBLE DOCSMITH TOC END -->
-- [Example playbooks, using this role](#examples)
-- [Supported tags](#tags)
 - [Dependencies](#dependencies)
 - [Compatibility](#compatibility)
 - [External requirements](#requirements)
@@ -34,6 +34,79 @@ Main features:
   * See `__run_sshd_sshd_settings_defaults` in  `./vars/main.yml` for a complete list.
 * Default configuration result passes [`ssh-audit`](https://github.com/jtesta/ssh-audit) without errors or warnings.
 * Simple to use: extend or adapt / overwrite the role's default configuration with a simple dictionary.
+
+
+## Example playbooks, using this role<a id="examples"></a>
+
+Installation with automatic upgrade:
+
+```yaml
+---
+
+- name: "Initialize the foundata.sshd.run role"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+
+    - name: "Trigger invocation of the foundata.sshd.run role"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+      vars:
+        run_sshd_autoupgrade: true
+```
+
+Installation with custom configuration options (e.g., `GatewayPorts: false`) and an override of the role's default setting for `GSSAPIAuthentication` and `Port`:
+
+```yaml
+---
+
+- name: "Initialize the foundata.sshd.run role"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+
+    - name: "Trigger invocation of the foundata.sshd.run role"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+      vars:
+        run_sshd_autoupgrade: true
+        run_sshd_sshd_settings:
+          Port: 2222
+          GatewayPorts: false
+          GSSAPIAuthentication: true
+```
+
+Uninstall (⚠️ Warning: This will remove SSH access from the target machines!)
+
+```yaml
+---
+
+- name: "Initialize the foundata.sshd.run role"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+
+    - name: "Trigger invocation of the foundata.sshd.run role"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+      vars:
+        run_sshd_state: "absent"
+```
+
+
+
+## Supported tags<a id="tags"></a>
+
+It might be useful and faster to only call parts of the role by using tags:
+
+- `run_sshd_setup`: Manage basic resources, such as packages or service users.
+- `run_sshd_config`: Manage settings, such as adapting or creating configuration files.
+- `run_sshd_service`: Manage services and daemons, such as running states and service boot configurations.
+
+There are also tags usually not meant to be called directly but listed for the sake of completeness** and edge cases:
+
+- `run_sshd_always`, `always`: Tasks needed by the role itself for internal role setup and the Ansible environment.
+
 
 
 <!-- ANSIBLE DOCSMITH MAIN START -->
@@ -154,79 +227,6 @@ from previous Ansible runs will be removed automatically to prevent conflicts.
 
 
 <!-- ANSIBLE DOCSMITH MAIN END -->
-
-
-## Example playbooks, using this role<a id="examples"></a>
-
-Installation with automatic upgrade:
-
-```yaml
----
-
-- name: "Initialize the foundata.sshd.run role"
-  hosts: localhost
-  gather_facts: false
-  tasks:
-
-    - name: "Trigger invocation of the foundata.sshd.run role"
-      ansible.builtin.include_role:
-        name: "foundata.sshd.run"
-      vars:
-        run_sshd_autoupgrade: true
-```
-
-Installation with custom configuration options (e.g., `GatewayPorts: false`) and an override of the role's default setting for `GSSAPIAuthentication` and `Port`:
-
-```yaml
----
-
-- name: "Initialize the foundata.sshd.run role"
-  hosts: localhost
-  gather_facts: false
-  tasks:
-
-    - name: "Trigger invocation of the foundata.sshd.run role"
-      ansible.builtin.include_role:
-        name: "foundata.sshd.run"
-      vars:
-        run_sshd_autoupgrade: true
-        run_sshd_sshd_settings:
-          Port: 2222
-          GatewayPorts: false
-          GSSAPIAuthentication: true
-```
-
-Uninstall (⚠️ Warning: This will remove SSH access from the target machines!)
-
-```yaml
----
-
-- name: "Initialize the foundata.sshd.run role"
-  hosts: localhost
-  gather_facts: false
-  tasks:
-
-    - name: "Trigger invocation of the foundata.sshd.run role"
-      ansible.builtin.include_role:
-        name: "foundata.sshd.run"
-      vars:
-        run_sshd_state: "absent"
-```
-
-
-
-## Supported tags<a id="tags"></a>
-
-It might be useful and faster to only call parts of the role by using tags:
-
-- `run_sshd_setup`: Manage basic resources, such as packages or service users.
-- `run_sshd_config`: Manage settings, such as adapting or creating configuration files.
-- `run_sshd_service`: Manage services and daemons, such as running states and service boot configurations.
-
-There are also tags usually not meant to be called directly but listed for the sake of completeness** and edge cases:
-
-- `run_sshd_always`, `always`: Tasks needed by the role itself for internal role setup and the Ansible environment.
-
 
 
 ## Dependencies<a id="dependencies"></a>

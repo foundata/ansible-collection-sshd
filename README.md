@@ -5,6 +5,17 @@ This repository contains the `foundata.sshd` Ansible Collection.
 It provides resources to manage and use the [OpenSSH](https://www.openssh.com/) secure shell daemon ([sshd](https://man.openbsd.org/sshd.8)), propably the world's most used [SSH (Secure SHell)](https://en.wikipedia.org/wiki/Secure_Shell) server.
 
 
+<div align="center" id="project-readme-header">
+<br>
+<br>
+
+**⭐ Found this useful? Support open-source and star this project:**
+
+[![GitHub repository](https://img.shields.io/github/stars/foundata/ansible-collection-sshd.svg)](https://github.com/foundata/ansible-collection-sshd)
+
+<br>
+</div>
+
 
 ## Table of contents<a id="toc"></a>
 

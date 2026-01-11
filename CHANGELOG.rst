@@ -4,13 +4,28 @@ foundata.sshd Ansible collection Release Notes
 
 .. contents:: Topics
 
+v1.4.0
+======
+
+Release Summary
+---------------
+
+Release Date: 2026-01-11
+
+Feature release.
+
+Minor Changes
+-------------
+
+- ``foundata.sshd.run``: Add ``run_sshd_config_dropin_file_name`` variable to allow customizing the sshd drop-in configuration filename. Default changed from ``00-ansible.conf`` to ``00-managed.conf`` for consistency with other roles.
+
 v1.3.0
 ======
 
 Release Summary
 ---------------
 
-Release Date: 2026-01-08
+Release Date: 
 
 Maintenance release.
 

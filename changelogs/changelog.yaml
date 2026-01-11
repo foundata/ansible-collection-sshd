@@ -1,6 +1,23 @@
 ---
 ancestor: null
 releases:
+  1.4.0:
+    changes:
+      minor_changes:
+        - '``foundata.sshd.run``: Add ``run_sshd_config_dropin_file_name`` variable
+          to allow customizing the sshd drop-in configuration filename. Default changed
+          from ``00-ansible.conf`` to ``00-managed.conf`` for consistency with other
+          roles.'
+      release_summary: 'Release Date: 2026-01-11
+
+
+        Feature release.
+
+        '
+    fragments:
+      - 1.4.0-release.yaml
+      - run-role-sshd-config-filename-parameter.yaml
+    release_date: '2026-01-11'
   1.3.0:
     changes:
       minor_changes:

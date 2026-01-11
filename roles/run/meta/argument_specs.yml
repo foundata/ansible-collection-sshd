@@ -92,3 +92,4 @@ argument_specs:
           from previous Ansible runs will be removed automatically to prevent conflicts.
         type: "str"
         default: "00-managed.conf"
+        version_added: "1.4.0"

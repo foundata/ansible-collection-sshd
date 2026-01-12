@@ -154,6 +154,25 @@
     verbosity: 1
 
 
+- name: "Molecule | Verify | Set regular expression to search for warnings and errors in the journal"
+  ansible.builtin.set_fact:
+    __testing_regex_searchwarningerror: '(?i)\b(warning|error|unsupported)'
+
+
+- name: "Molecule | Verify | Check journal for warnings or errors: sshd"
+  ansible.builtin.command:
+    argv:
+      - "{{ __testing_journalctl_executable }}"
+      - '--unit={{ __run_sshd_sshd_servicename | regex_replace("\.service$", "*") }}'
+  changed_when: false
+  failed_when:
+    - (__testing_run_journalctlcheck_result['stdout'] is search(__testing_regex_searchwarningerror))
+  register: __testing_run_journalctlcheck_result
+
+
+# ssh-audit (must run after checking the journal for errors, as the audit can
+# trigger log entries such as: error: kex_exchange_identification)
+
 - name: "Molecule | Verify | Run ssh-audit against localhost on configured port"
   ansible.builtin.shell: |-
     ssh-audit localhost:{{ __testing_configured_ssh_port | int }} -jj > /tmp/ssh-audit-result.json
@@ -261,22 +280,6 @@
     }}
   when:
     - __run_sshd_sshd_settings_overwrite | length > 0
-
-
-- name: "Molecule | Verify | Set regular expression to search for warnings and errors in the journal"
-  ansible.builtin.set_fact:
-    __testing_regex_searchwarningerror: '(?i)\b(warning|error|unsupported)'
-
-
-- name: "Molecule | Verify | Check journal for warnings or errors: sshd"
-  ansible.builtin.command:
-    argv:
-      - "{{ __testing_journalctl_executable }}"
-      - '--unit={{ __run_sshd_sshd_servicename | regex_replace("\.service$", "*") }}'
-  changed_when: false
-  failed_when:
-    - (__testing_run_journalctlcheck_result['stdout'] is search(__testing_regex_searchwarningerror))
-  register: __testing_run_journalctlcheck_result
 
 
 # Permission Verification Tests

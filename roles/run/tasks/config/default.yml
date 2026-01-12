@@ -27,7 +27,10 @@
   # /usr/libexec/openssh/sshd-keygen would be a more flexible alternative as it
   # accepts specific key types as arguments, but it is usually only available on
   # Red Hat-based distributions.
-  ansible.builtin.command: "{{ __run_sshd_sshkeygen_exec_path }} -A"
+  ansible.builtin.command:
+    argv:
+      - "{{ __run_sshd_sshkeygen_exec_path }}"
+      - "-A"
   when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | list | length > 0
   changed_when:
     - __run_sshd_sshkeygen_result['rc'] == 0

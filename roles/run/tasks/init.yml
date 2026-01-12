@@ -86,10 +86,64 @@
 ### SSHD specific
 
 
-- name: "Init | Merge user and default settings"
+# Regarding the merge logic in the following two tasks:
+#
+# - A simple dict_a | ansible.builtin.combine(dict_b) is not sufficient when
+#   case-insensitive behavior is required. The combine() filter treats keys as
+#   case-sensitive, so dict_b['Foo'] does not overwrite dict_a['foo'].
+#   Therefore, the more complex rejectattr() approach with regex matching is
+#   needed.
+#
+# - If this is needed more often (or becomes more complex), it might make sense
+#   to implement a custom filter, e.g.:
+#   def combine_ci(base_dict, override_dict, remove_none=True)
+- name: "Init | Merge user and default sshd settings"
   ansible.builtin.set_fact:
     __run_sshd_effective_sshd_settings: >-
       {{
         __run_sshd_sshd_settings_defaults
+        | dict2items
+        | rejectattr('key', 'match', '^(' ~ (run_sshd_sshd_settings.keys() | join('|')) ~ ')$', ignorecase=true)
+        | items2dict
         | ansible.builtin.combine(run_sshd_sshd_settings)
+        | dict2items
+        | selectattr('value', 'ne', None)
+        | items2dict
       }}
+
+
+- name: "Init | Apply OS-specific sshd setting overwrites (if any)"
+  ansible.builtin.set_fact:
+    __run_sshd_effective_sshd_settings: >-
+      {{
+        __run_sshd_effective_sshd_settings
+        | dict2items
+        | rejectattr('key', 'match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
+        | items2dict
+        | ansible.builtin.combine(__run_sshd_sshd_settings_overwrite)
+        | dict2items
+        | selectattr('value', 'ne', None)
+        | items2dict
+      }}
+  when:
+    - __run_sshd_sshd_settings_overwrite | length > 0
+
+
+- name: "Init | Warn about user settings overwritten by OS-specific constraints (if any)"
+  vars:
+    __run_sshd_overwritten_keys: >-
+      {{
+        run_sshd_sshd_settings.keys()
+        | list
+        | select('match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
+        | list
+      }}
+  ansible.builtin.debug:
+    msg: >-
+      The following sshd settings from 'run_sshd_sshd_settings' are being
+      overwritten by OS-specific constraints: {{ __run_sshd_overwritten_keys | join(', ') }}.
+      This is typically due to the sshd build on this platform not supporting these options.
+    verbosity: 3
+  when:
+    - __run_sshd_sshd_settings_overwrite | length > 0
+    - __run_sshd_overwritten_keys | length > 0

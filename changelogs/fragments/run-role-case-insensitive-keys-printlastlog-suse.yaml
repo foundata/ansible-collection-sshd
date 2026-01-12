@@ -1,0 +1,6 @@
+---
+
+minor_changes:
+  - "``foundata.sshd.run``: Implement case-insensitive key handling for sshd settings to properly
+   handle keys like 'Port' vs 'port'."
+  - "``foundata.sshd.run``: Drop ``PrintLastLog`` option on SUSE (openssh built with --disable-lastlog)."

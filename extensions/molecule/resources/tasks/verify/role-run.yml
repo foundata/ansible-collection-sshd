@@ -12,6 +12,13 @@
     # values have to be in sync with the config set in ../converge/run-role.yml
     run_sshd_config_dropin_file_name: "00-custom-dropin.conf"
     __run_sshd_config_dropin_file_path: "{{ __run_sshd_config_dropin_dir_path }}/00-custom-dropin.conf"
+    # other testing specific values
+    __testing_journalctl_executable: >-
+      {{
+        '/bin/journalctl'
+        if (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] | int == 11)
+        else '/usr/bin/journalctl'
+      }}
 
 
 - name: "Molecule | Verify | Check if sshd drop-in configuration file exists"
@@ -67,13 +74,13 @@
     success_msg: "SSH service '{{ __run_sshd_sshd_servicename }}' is running"
 
 
-- name: "Molecule | Verify | Read main sshd_config content"
+- name: "Molecule | Verify | Read main sshd config file content"
   ansible.builtin.slurp:
     src: "{{ __run_sshd_config_file_path }}"
   register: __testing_sshd_config
 
 
-- name: "Molecule | Verify | Read main sshd_config content"
+- name: "Molecule | Verify | Decode main sshd config file content"
   ansible.builtin.set_fact:
     __testing_sshd_config_content: "{{ __testing_sshd_config['content'] | b64decode }}"
 
@@ -198,6 +205,80 @@
     success_msg: "ssh-audit verified SSH config with no issues."
 
 
+# OS-specific overwrite verification (text-based)
+# Ensures that any key defined in __run_sshd_sshd_settings_overwrite does not
+# appear as an active directive in the sshd_config file content.
+
+- name: "Molecule | Verify | Read drop-in sshd config file content"
+  ansible.builtin.slurp:
+    src: "{{ __run_sshd_config_dropin_file_path }}"
+  register: __testing_sshd_dropin_config
+
+
+- name: "Molecule | Verify | Decode drop-in sshd_config file content"
+  ansible.builtin.set_fact:
+    __testing_sshd_dropin_config_content: "{{ __testing_sshd_dropin_config['content'] | b64decode }}"
+
+
+- name: "Molecule | Verify | Assert overwritten settings to drop (value: null) (if any) are not in sshd_config"
+  ansible.builtin.assert:
+    that:
+      # Match active (not commented) directive: start of line, optional whitespace,
+      # NOT a comment, then the directive name followed by whitespace or EOL
+      - not (__testing_sshd_dropin_config_content is search('(?mi)^(?![\t ]*#)[\t ]*' ~ item ~ '(?=[\t ]|$)'))
+    fail_msg: >-
+      Directive '{{ item }}' was found as active in sshd drop-in config but should have
+      been removed by __run_sshd_sshd_settings_overwrite. This OS does not support this
+      option or it conflicts with OS-specific requirements.
+    success_msg: "Directive '{{ item }}' correctly absent from sshd_config."
+  loop: >-
+    {{
+      __run_sshd_sshd_settings_overwrite | dict2items
+      | selectattr('value', 'in', [none, ''])
+      | map(attribute='key') | list
+    }}
+  when:
+    - __run_sshd_sshd_settings_overwrite | length > 0
+
+
+- name: "Molecule | Verify | Assert overwritten settings with specific values are present in sshd_config"
+  ansible.builtin.assert:
+    that:
+      # Match active directive with expected value: key followed by whitespace and value
+      - >-
+        __testing_sshd_dropin_config_content is search(
+          '(?mi)^[\t ]*' ~ item['key'] ~ '[\t ]+' ~ (item['value'] | string | regex_escape) ~ '[\t ]*$'
+        )
+    fail_msg: >-
+      Directive '{{ item['key'] }}' with value '{{ item['value'] }}' was not found in sshd drop-in config
+      but should have been set by __run_sshd_sshd_settings_overwrite.
+    success_msg: "Directive '{{ item['key'] }}' correctly set to '{{ item['value'] }}' in sshd_config."
+  loop: >-
+    {{
+      __run_sshd_sshd_settings_overwrite | dict2items
+      | rejectattr('value', 'in', [none, ''])
+      | list
+    }}
+  when:
+    - __run_sshd_sshd_settings_overwrite | length > 0
+
+
+- name: "Molecule | Verify | Set regular expression to search for warnings and errors in the journal"
+  ansible.builtin.set_fact:
+    __testing_regex_searchwarningerror: '(?i)\b(warning|error|unsupported)'
+
+
+- name: "Molecule | Verify | Check journal for warnings or errors: sshd"
+  ansible.builtin.command:
+    argv:
+      - "{{ __testing_journalctl_executable }}"
+      - '--unit={{ __run_sshd_sshd_servicename | regex_replace("\.service$", "*") }}'
+  changed_when: false
+  failed_when:
+    - (__testing_run_journalctlcheck_result['stdout'] is search(__testing_regex_searchwarningerror))
+  register: __testing_run_journalctlcheck_result
+
+
 # Permission Verification Tests
 #
 # This section verifies that the role applies filesystem permissions that match
@@ -269,7 +350,7 @@
 
 - name: "Molecule | Verify | Build platform key for matrix lookup"
   ansible.builtin.set_fact:
-    __testing_platform_key: "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}"
+    __testing_platform_key: "{{ ansible_facts['distribution'] }}-{{ ansible_facts['distribution_major_version'] }}"
 
 
 # Verify: Role permissions match OS package defaults (static matrix)
@@ -278,7 +359,7 @@
 # installing openssh-server fresh on each OS and recording the default
 # permissions.
 # Values determined by fresh openssh installation on each distribution+version.
-# Keys use distribution name + major version (ansible_distribution_major_version).
+# Keys use distribution name + major version (ansible_facts['distribution_major_version']).
 # See prepare/all.yml for instructions on how to update / determine values for
 # new OSes.
 - name: "Molecule | Verify | Define OS permission matrix"

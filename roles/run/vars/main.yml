@@ -163,6 +163,12 @@ __run_sshd_sshd_settings_defaults:
   MACs: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com"
 
 
+# Special variable intended to be overridden in OS-specific variable files.
+# Commonly used to selectively drop sshd settings by setting their value to
+# null.
+__run_sshd_sshd_settings_overwrite: {}
+
+
 # Configuration file paths, ownership, and permissions for the SSH daemon.
 # These variables define the different locations of configuration files, the
 # include directory, and the Ansible-managed configuration file, ensuring

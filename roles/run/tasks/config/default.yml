@@ -6,7 +6,7 @@
   ansible.builtin.set_fact:
     __run_sshd_configured_hostkeys: >-
       {{
-        (__run_sshd_effective_sshd_settings.HostKey is string)
+        (__run_sshd_effective_sshd_settings.HostKey is ansible.builtin.string)
         | ansible.builtin.ternary([__run_sshd_effective_sshd_settings.HostKey], __run_sshd_effective_sshd_settings.HostKey)
         | ansible.builtin.default([])
       }}

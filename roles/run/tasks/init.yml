@@ -79,7 +79,7 @@
   vars:
     __run_sshd_vars_file: "{{ role_path }}/vars/{{ item }}"
   when:
-    - __run_sshd_vars_file is file
+    - __run_sshd_vars_file is ansible.builtin.file
   loop: "{{ __run_sshd_platform_filenames_most_specific_last }}"
 
 

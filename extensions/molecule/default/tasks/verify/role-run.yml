@@ -275,7 +275,7 @@
   loop: >-
     {{
       __run_sshd_sshd_settings_overwrite | ansible.builtin.dict2items
-      | rejectattr('value', 'in', [none, ''])
+      | ansible.builtin.rejectattr('value', 'in', [none, ''])
       | ansible.builtin.list
     }}
   when:
@@ -531,6 +531,6 @@
       Current: {{ item['mode'] }}. OS default ({{ __testing_platform_key }}): {{ item['expected_mode_os'] }}.
       Update role vars or __testing_os_permission_matrix if OS defaults changed.
     success_msg: "{{ item['path'] }} matches OS default ({{ item['mode'] }})"
-  loop: "{{ __testing_permissions | selectattr('expected_mode_os', 'defined') | rejectattr('expected_mode_os', 'none') | ansible.builtin.list }}"
+  loop: "{{ __testing_permissions | selectattr('expected_mode_os', 'defined') | ansible.builtin.rejectattr('expected_mode_os', 'none') | ansible.builtin.list }}"
   loop_control:
     label: "{{ item['path'] }}"

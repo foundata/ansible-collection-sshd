@@ -266,7 +266,7 @@
       # Match active directive with expected value: key followed by whitespace and value
       - >-
         __testing_sshd_dropin_config_content is search(
-          '(?mi)^[\t ]*' ~ item['key'] ~ '[\t ]+' ~ (item['value'] | string | ansible.builtin.regex_escape) ~ '[\t ]*$'
+          '(?mi)^[\t ]*' ~ item['key'] ~ '[\t ]+' ~ (item['value'] | ansible.builtin.string | ansible.builtin.regex_escape) ~ '[\t ]*$'
         )
     fail_msg: >-
       Directive '{{ item['key'] }}' with value '{{ item['value'] }}' was not found in sshd drop-in config

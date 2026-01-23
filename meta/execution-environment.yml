@@ -1,0 +1,10 @@
+# Execution Environment dependencies for the foundata.sshd collection
+
+---
+
+version: 3
+
+dependencies:
+  galaxy:
+    collections: {}
+    roles: {}

@@ -50,7 +50,7 @@
        | selectattr('name', 'match', '^(' ~ ansible_facts['distribution'] ~ '|' ~ ansible_facts['os_family'] ~ ')$', ignorecase=true)
        | map(attribute='versions') | flatten
        | select('match', '^(' ~ ansible_facts['distribution_major_version'] ~ '|' ~ ansible_facts['distribution_version'] ~ '|all)$', ignorecase=true)
-       | list | length) < 1
+       | ansible.builtin.list | length) < 1
   ignore_errors: true # noqa: ignore-errors
 
 
@@ -134,9 +134,9 @@
     __run_sshd_overwritten_keys: >-
       {{
         run_sshd_sshd_settings.keys()
-        | list
+        | ansible.builtin.list
         | select('match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
-        | list
+        | ansible.builtin.list
       }}
   ansible.builtin.debug:
     msg: >-

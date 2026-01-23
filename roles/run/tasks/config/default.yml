@@ -135,9 +135,9 @@
       {%- set options = [] -%}
       {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.map(attribute='content') | ansible.builtin.map('b64decode') | ansible.builtin.list) -%}
         {%- for line in file_content.splitlines() -%}
-          {%- if line | regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
+          {%- if line | ansible.builtin.regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
             {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') | ansible.builtin.trim -%}
-            {%- if ssh_option_name | regex_search('^Subsystem[\t ]+', multiline=false, ignorecase=true) -%}
+            {%- if ssh_option_name | ansible.builtin.regex_search('^Subsystem[\t ]+', multiline=false, ignorecase=true) -%}
               {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0:2] | join('[\\t ]+') -%}
             {%- else -%}
               {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0] -%}

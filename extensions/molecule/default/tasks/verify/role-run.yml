@@ -163,7 +163,7 @@
   ansible.builtin.command:
     argv:
       - "{{ __testing_journalctl_executable }}"
-      - '--unit={{ __run_sshd_sshd_servicename | regex_replace("\.service$", "*") }}'
+      - '--unit={{ __run_sshd_sshd_servicename | ansible.builtin.regex_replace("\.service$", "*") }}'
   changed_when: false
   failed_when:
     - (__testing_run_journalctlcheck_result['stdout'] is search(__testing_regex_searchwarningerror))
@@ -266,7 +266,7 @@
       # Match active directive with expected value: key followed by whitespace and value
       - >-
         __testing_sshd_dropin_config_content is search(
-          '(?mi)^[\t ]*' ~ item['key'] ~ '[\t ]+' ~ (item['value'] | string | regex_escape) ~ '[\t ]*$'
+          '(?mi)^[\t ]*' ~ item['key'] ~ '[\t ]+' ~ (item['value'] | string | ansible.builtin.regex_escape) ~ '[\t ]*$'
         )
     fail_msg: >-
       Directive '{{ item['key'] }}' with value '{{ item['value'] }}' was not found in sshd drop-in config

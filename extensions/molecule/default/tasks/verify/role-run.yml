@@ -82,7 +82,7 @@
 
 - name: "Molecule | Verify | Decode main sshd config file content"
   ansible.builtin.set_fact:
-    __testing_sshd_config_content: "{{ __testing_sshd_config['content'] | b64decode }}"
+    __testing_sshd_config_content: "{{ __testing_sshd_config['content'] | ansible.builtin.b64decode }}"
 
 
 - name: "Molecule | Verify | Assert some Options are commented out in the default daemon config file"
@@ -196,7 +196,7 @@
 
 - name: "Molecule | Verify | Parse ssh-audit results"
   ansible.builtin.set_fact:
-    __testing_ssh_audit_results: "{{ __testing_ssh_audit_json_encoded['content'] | b64decode | from_json }}"
+    __testing_ssh_audit_results: "{{ __testing_ssh_audit_json_encoded['content'] | ansible.builtin.b64decode | from_json }}"
   when:
     - __testing_ssh_audit_json_encoded is defined
     - __testing_ssh_audit_json_encoded['content'] is defined
@@ -236,7 +236,7 @@
 
 - name: "Molecule | Verify | Decode drop-in sshd_config file content"
   ansible.builtin.set_fact:
-    __testing_sshd_dropin_config_content: "{{ __testing_sshd_dropin_config['content'] | b64decode }}"
+    __testing_sshd_dropin_config_content: "{{ __testing_sshd_dropin_config['content'] | ansible.builtin.b64decode }}"
 
 
 - name: "Molecule | Verify | Assert overwritten settings to drop (value: null) (if any) are not in sshd_config"

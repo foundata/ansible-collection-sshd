@@ -47,9 +47,9 @@
   when:
     - (__run_sshd_supported_platforms | ansible.builtin.length) > 0
     - (__run_sshd_supported_platforms
-       | selectattr('name', 'match', '^(' ~ ansible_facts['distribution'] ~ '|' ~ ansible_facts['os_family'] ~ ')$', ignorecase=true)
+       | ansible.builtin.selectattr('name', 'match', '^(' ~ ansible_facts['distribution'] ~ '|' ~ ansible_facts['os_family'] ~ ')$', ignorecase=true)
        | ansible.builtin.map(attribute='versions') | ansible.builtin.flatten
-       | select('match', '^(' ~ ansible_facts['distribution_major_version'] ~ '|' ~ ansible_facts['distribution_version'] ~ '|all)$', ignorecase=true)
+       | ansible.builtin.select('match', '^(' ~ ansible_facts['distribution_major_version'] ~ '|' ~ ansible_facts['distribution_version'] ~ '|all)$', ignorecase=true)
        | ansible.builtin.list | ansible.builtin.length) < 1
   ignore_errors: true # noqa: ignore-errors
 
@@ -107,7 +107,7 @@
         | items2dict
         | ansible.builtin.combine(run_sshd_sshd_settings)
         | ansible.builtin.dict2items
-        | selectattr('value', 'ne', None)
+        | ansible.builtin.selectattr('value', 'ne', None)
         | items2dict
       }}
 
@@ -122,7 +122,7 @@
         | items2dict
         | ansible.builtin.combine(__run_sshd_sshd_settings_overwrite)
         | ansible.builtin.dict2items
-        | selectattr('value', 'ne', None)
+        | ansible.builtin.selectattr('value', 'ne', None)
         | items2dict
       }}
   when:
@@ -135,7 +135,7 @@
       {{
         run_sshd_sshd_settings.keys()
         | ansible.builtin.list
-        | select('match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
+        | ansible.builtin.select('match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
         | ansible.builtin.list
       }}
   ansible.builtin.debug:

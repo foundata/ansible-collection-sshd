@@ -31,7 +31,7 @@
     argv:
       - "{{ __run_sshd_sshkeygen_exec_path }}"
       - "-A"
-  when: __run_sshd_hostkey_stats.results | ansible.builtin.map(attribute='stat.exists') | select('equalto', false) | ansible.builtin.list | ansible.builtin.length > 0
+  when: __run_sshd_hostkey_stats.results | ansible.builtin.map(attribute='stat.exists') | ansible.builtin.select('equalto', false) | ansible.builtin.list | ansible.builtin.length > 0
   changed_when:
     - __run_sshd_sshkeygen_result['rc'] == 0
     - __run_sshd_sshkeygen_result['stdout'] | ansible.builtin.trim | ansible.builtin.length > 0
@@ -200,7 +200,7 @@
     # - (?=[\t ]|$) is a safeguard to prevent partial option matches (e.g., 'Foo'
     #   accidentally matching 'FooBar' if such a token appeared).
     regexp: >-
-      ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_dropin_options | select | join('|') }})(?=[\t ]|$)(.*)
+      ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_dropin_options | ansible.builtin.select | join('|') }})(?=[\t ]|$)(.*)
     replace: '#\1\2\3'
     validate: "{{ __run_sshd_sshd_exec_path }} -t -f %s"
   notify: "run_sshd: restart sshd.service"

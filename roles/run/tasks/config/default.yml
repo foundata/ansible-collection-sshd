@@ -34,7 +34,7 @@
   when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | list | length > 0
   changed_when:
     - __run_sshd_sshkeygen_result['rc'] == 0
-    - __run_sshd_sshkeygen_result['stdout'] | trim | length > 0
+    - __run_sshd_sshkeygen_result['stdout'] | ansible.builtin.trim | length > 0
   register: __run_sshd_sshkeygen_result
   notify: "run_sshd: restart sshd.service"
 
@@ -136,7 +136,7 @@
       {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results'] | map(attribute='content') | map('b64decode') | list) -%}
         {%- for line in file_content.splitlines() -%}
           {%- if line | regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
-            {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') | trim -%}
+            {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') | ansible.builtin.trim -%}
             {%- if ssh_option_name | regex_search('^Subsystem[\t ]+', multiline=false, ignorecase=true) -%}
               {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0:2] | join('[\\t ]+') -%}
             {%- else -%}

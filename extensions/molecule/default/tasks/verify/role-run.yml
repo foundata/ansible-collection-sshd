@@ -141,7 +141,7 @@
   ansible.builtin.set_fact:
     __testing_configured_ssh_port: >-
       {{
-        __run_sshd_effective_sshd_settings['Port'] | default(22) | int
+        __run_sshd_effective_sshd_settings['Port'] | ansible.builtin.default(22) | int
         if (__run_sshd_effective_sshd_settings is defined and
             __run_sshd_effective_sshd_settings['Port'] is defined)
         else 22
@@ -204,9 +204,9 @@
 
 - name: "Molecule | Verify | Check for CVEs or warnings and failures in recommendations"
   ansible.builtin.set_fact:
-    __testing_ssh_audit_cves: "{{ __testing_ssh_audit_results['cves'] | default({}) | ansible.builtin.length > 0 }}"
-    __testing_ssh_audit_warnings: "{{ __testing_ssh_audit_results['recommendations']['warning'] | default({}) | ansible.builtin.length > 0 }}"
-    __testing_ssh_audit_failures: "{{ __testing_ssh_audit_results['recommendations']['critical'] | default({}) | ansible.builtin.length > 0 }}"
+    __testing_ssh_audit_cves: "{{ __testing_ssh_audit_results['cves'] | ansible.builtin.default({}) | ansible.builtin.length > 0 }}"
+    __testing_ssh_audit_warnings: "{{ __testing_ssh_audit_results['recommendations']['warning'] | ansible.builtin.default({}) | ansible.builtin.length > 0 }}"
+    __testing_ssh_audit_failures: "{{ __testing_ssh_audit_results['recommendations']['critical'] | ansible.builtin.default({}) | ansible.builtin.length > 0 }}"
   when:
     - __testing_ssh_audit_results is defined
     - __testing_ssh_audit_results['recommendations'] is defined
@@ -488,7 +488,7 @@
       {% for i in range(__testing_paths_to_verify | ansible.builtin.length) %}
       {%   set spec = __testing_paths_to_verify[i] %}
       {%   set result = __testing_stat_results['results'][i] %}
-      {%   if result['stat']['exists'] | default(false) %}
+      {%   if result['stat']['exists'] | ansible.builtin.default(false) %}
       {%     set expected_mode_os = __testing_os_permission_matrix[__testing_platform_key][spec['os_matrix_key']]
                if spec['os_matrix_key'] else none %}
       {%     set _ = items.append({
@@ -496,10 +496,10 @@
                'mode': result['stat']['mode'],
                'expected_mode_role': __testing_mode_map[spec['expected_mode_role']],
                'expected_mode_os': expected_mode_os,
-               'owner': result['stat']['pw_name'] | default(''),
-               'expected_owner': spec['expected_owner'] | default(''),
-               'group': result['stat']['gr_name'] | default(''),
-               'expected_group': spec['expected_group'] | default('')
+               'owner': result['stat']['pw_name'] | ansible.builtin.default(''),
+               'expected_owner': spec['expected_owner'] | ansible.builtin.default(''),
+               'group': result['stat']['gr_name'] | ansible.builtin.default(''),
+               'expected_group': spec['expected_group'] | ansible.builtin.default('')
              }) %}
       {%   endif %}
       {% endfor %}

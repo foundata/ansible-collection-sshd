@@ -22,4 +22,4 @@
     __run_sshd_config_file_path: "/etc/ssh/sshd_config"
   when:
     - __run_sshd_config_file_path != "/etc/ssh/sshd_config"
-    - __run_sshd_etc_config_stat['stat']['exists'] | default(false)
+    - __run_sshd_etc_config_stat['stat']['exists'] | ansible.builtin.default(false)

@@ -252,7 +252,7 @@
     success_msg: "Directive '{{ item }}' correctly absent from sshd_config."
   loop: >-
     {{
-      __run_sshd_sshd_settings_overwrite | dict2items
+      __run_sshd_sshd_settings_overwrite | ansible.builtin.dict2items
       | selectattr('value', 'in', [none, ''])
       | ansible.builtin.map(attribute='key') | ansible.builtin.list
     }}
@@ -274,7 +274,7 @@
     success_msg: "Directive '{{ item['key'] }}' correctly set to '{{ item['value'] }}' in sshd_config."
   loop: >-
     {{
-      __run_sshd_sshd_settings_overwrite | dict2items
+      __run_sshd_sshd_settings_overwrite | ansible.builtin.dict2items
       | rejectattr('value', 'in', [none, ''])
       | ansible.builtin.list
     }}

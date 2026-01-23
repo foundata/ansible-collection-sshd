@@ -102,11 +102,11 @@
     __run_sshd_effective_sshd_settings: >-
       {{
         __run_sshd_sshd_settings_defaults
-        | dict2items
+        | ansible.builtin.dict2items
         | rejectattr('key', 'match', '^(' ~ (run_sshd_sshd_settings.keys() | join('|')) ~ ')$', ignorecase=true)
         | items2dict
         | ansible.builtin.combine(run_sshd_sshd_settings)
-        | dict2items
+        | ansible.builtin.dict2items
         | selectattr('value', 'ne', None)
         | items2dict
       }}
@@ -117,11 +117,11 @@
     __run_sshd_effective_sshd_settings: >-
       {{
         __run_sshd_effective_sshd_settings
-        | dict2items
+        | ansible.builtin.dict2items
         | rejectattr('key', 'match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
         | items2dict
         | ansible.builtin.combine(__run_sshd_sshd_settings_overwrite)
-        | dict2items
+        | ansible.builtin.dict2items
         | selectattr('value', 'ne', None)
         | items2dict
       }}

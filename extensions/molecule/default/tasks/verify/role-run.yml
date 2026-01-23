@@ -119,9 +119,9 @@
 - name: "Molecule | Verify | Assert no double-commented lines exist (regex idempotency)"
   ansible.builtin.assert:
     that:
-      - __testing_double_commented_lines | length == 0
+      - __testing_double_commented_lines | ansible.builtin.length == 0
     fail_msg: >-
-      Found {{ __testing_double_commented_lines | length }} double-commented lines in
+      Found {{ __testing_double_commented_lines | ansible.builtin.length }} double-commented lines in
       {{ __run_sshd_config_file_path }}. This indicates the commenting regex matched
       already-commented lines. Lines: {{ __testing_double_commented_lines[:5] }}
     success_msg: "No double-commented lines found - commenting regex is idempotent"
@@ -204,9 +204,9 @@
 
 - name: "Molecule | Verify | Check for CVEs or warnings and failures in recommendations"
   ansible.builtin.set_fact:
-    __testing_ssh_audit_cves: "{{ __testing_ssh_audit_results['cves'] | default({}) | length > 0 }}"
-    __testing_ssh_audit_warnings: "{{ __testing_ssh_audit_results['recommendations']['warning'] | default({}) | length > 0 }}"
-    __testing_ssh_audit_failures: "{{ __testing_ssh_audit_results['recommendations']['critical'] | default({}) | length > 0 }}"
+    __testing_ssh_audit_cves: "{{ __testing_ssh_audit_results['cves'] | default({}) | ansible.builtin.length > 0 }}"
+    __testing_ssh_audit_warnings: "{{ __testing_ssh_audit_results['recommendations']['warning'] | default({}) | ansible.builtin.length > 0 }}"
+    __testing_ssh_audit_failures: "{{ __testing_ssh_audit_results['recommendations']['critical'] | default({}) | ansible.builtin.length > 0 }}"
   when:
     - __testing_ssh_audit_results is defined
     - __testing_ssh_audit_results['recommendations'] is defined
@@ -257,7 +257,7 @@
       | map(attribute='key') | ansible.builtin.list
     }}
   when:
-    - __run_sshd_sshd_settings_overwrite | length > 0
+    - __run_sshd_sshd_settings_overwrite | ansible.builtin.length > 0
 
 
 - name: "Molecule | Verify | Assert overwritten settings with specific values are present in sshd_config"
@@ -279,7 +279,7 @@
       | ansible.builtin.list
     }}
   when:
-    - __run_sshd_sshd_settings_overwrite | length > 0
+    - __run_sshd_sshd_settings_overwrite | ansible.builtin.length > 0
 
 
 # Permission Verification Tests
@@ -485,7 +485,7 @@
   ansible.builtin.set_fact:
     __testing_permissions: |
       {% set items = [] %}
-      {% for i in range(__testing_paths_to_verify | length) %}
+      {% for i in range(__testing_paths_to_verify | ansible.builtin.length) %}
       {%   set spec = __testing_paths_to_verify[i] %}
       {%   set result = __testing_stat_results['results'][i] %}
       {%   if result['stat']['exists'] | default(false) %}

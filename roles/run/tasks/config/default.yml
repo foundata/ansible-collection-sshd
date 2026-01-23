@@ -31,10 +31,10 @@
     argv:
       - "{{ __run_sshd_sshkeygen_exec_path }}"
       - "-A"
-  when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | ansible.builtin.list | length > 0
+  when: __run_sshd_hostkey_stats.results | map(attribute='stat.exists') | select('equalto', false) | ansible.builtin.list | ansible.builtin.length > 0
   changed_when:
     - __run_sshd_sshkeygen_result['rc'] == 0
-    - __run_sshd_sshkeygen_result['stdout'] | ansible.builtin.trim | length > 0
+    - __run_sshd_sshkeygen_result['stdout'] | ansible.builtin.trim | ansible.builtin.length > 0
   register: __run_sshd_sshkeygen_result
   notify: "run_sshd: restart sshd.service"
 
@@ -105,7 +105,7 @@
   when:
     - __run_sshd_find_sshd_configd_result is defined
     - __run_sshd_find_sshd_configd_result['files'] is defined
-    - __run_sshd_find_sshd_configd_result['files'] | length > 0
+    - __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.length > 0
 
 
 - name: "Config | Default | Get contents of sshd drop-in config files"
@@ -116,7 +116,7 @@
   when:
     - __run_sshd_find_sshd_configd_result is defined
     - __run_sshd_find_sshd_configd_result['files'] is defined
-    - __run_sshd_find_sshd_configd_result['files'] | length > 0
+    - __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.length > 0
 
 
 - name: "Config | Default | Show contents of sshd drop-in config files"
@@ -126,7 +126,7 @@
   when:
     - __run_sshd_slurp_sshd_configd_result is defined
     - __run_sshd_slurp_sshd_configd_result['results'] is defined
-    - __run_sshd_slurp_sshd_configd_result['results'] | length > 0
+    - __run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.length > 0
 
 
 - name: "Config | Default | Create a list of options configured in sshd drop-in config files"
@@ -152,7 +152,7 @@
   when:
     - __run_sshd_slurp_sshd_configd_result is defined
     - __run_sshd_slurp_sshd_configd_result['results'] is defined
-    - __run_sshd_slurp_sshd_configd_result['results'] | length > 0
+    - __run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.length > 0
 
 
 - name: "Config | Default | Show the list of options configured in drop-in sshd config files"
@@ -161,7 +161,7 @@
     verbosity: 4
   when:
     - __run_sshd_dropin_options is defined
-    - __run_sshd_dropin_options | length > 0
+    - __run_sshd_dropin_options | ansible.builtin.length > 0
 
 
 - name: "Config | Default | Ensure main config file exists with proper permissions"

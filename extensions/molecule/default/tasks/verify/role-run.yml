@@ -254,7 +254,7 @@
     {{
       __run_sshd_sshd_settings_overwrite | dict2items
       | selectattr('value', 'in', [none, ''])
-      | map(attribute='key') | ansible.builtin.list
+      | ansible.builtin.map(attribute='key') | ansible.builtin.list
     }}
   when:
     - __run_sshd_sshd_settings_overwrite | ansible.builtin.length > 0

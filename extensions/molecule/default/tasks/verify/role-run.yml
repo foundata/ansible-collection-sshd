@@ -68,7 +68,7 @@
 - name: "Molecule | Verify | Assert SSH service is running"
   ansible.builtin.assert:
     that:
-      - ansible_facts['services'][__run_sshd_sshd_servicename] is defined
+      - ansible_facts['services'][__run_sshd_sshd_servicename] is ansible.builtin.defined
       - ansible_facts['services'][__run_sshd_sshd_servicename].state == 'running'
     fail_msg: "SSH service '{{ __run_sshd_sshd_servicename }}' is not running"
     success_msg: "SSH service '{{ __run_sshd_sshd_servicename }}' is running"
@@ -142,8 +142,8 @@
     __testing_configured_ssh_port: >-
       {{
         __run_sshd_effective_sshd_settings['Port'] | ansible.builtin.default(22) | int
-        if (__run_sshd_effective_sshd_settings is defined and
-            __run_sshd_effective_sshd_settings['Port'] is defined)
+        if (__run_sshd_effective_sshd_settings is ansible.builtin.defined and
+            __run_sshd_effective_sshd_settings['Port'] is ansible.builtin.defined)
         else 22
       }}
 
@@ -189,8 +189,8 @@
   ansible.builtin.slurp:
     src: "/tmp/ssh-audit-result.json"
   when:
-    - __testing_ssh_audit_run is defined
-    - __testing_ssh_audit_run['rc'] is defined
+    - __testing_ssh_audit_run is ansible.builtin.defined
+    - __testing_ssh_audit_run['rc'] is ansible.builtin.defined
   register: __testing_ssh_audit_json_encoded
 
 
@@ -198,8 +198,8 @@
   ansible.builtin.set_fact:
     __testing_ssh_audit_results: "{{ __testing_ssh_audit_json_encoded['content'] | ansible.builtin.b64decode | from_json }}"
   when:
-    - __testing_ssh_audit_json_encoded is defined
-    - __testing_ssh_audit_json_encoded['content'] is defined
+    - __testing_ssh_audit_json_encoded is ansible.builtin.defined
+    - __testing_ssh_audit_json_encoded['content'] is ansible.builtin.defined
 
 
 - name: "Molecule | Verify | Check for CVEs or warnings and failures in recommendations"
@@ -208,15 +208,15 @@
     __testing_ssh_audit_warnings: "{{ __testing_ssh_audit_results['recommendations']['warning'] | ansible.builtin.default({}) | ansible.builtin.length > 0 }}"
     __testing_ssh_audit_failures: "{{ __testing_ssh_audit_results['recommendations']['critical'] | ansible.builtin.default({}) | ansible.builtin.length > 0 }}"
   when:
-    - __testing_ssh_audit_results is defined
-    - __testing_ssh_audit_results['recommendations'] is defined
+    - __testing_ssh_audit_results is ansible.builtin.defined
+    - __testing_ssh_audit_results['recommendations'] is ansible.builtin.defined
 
 
 - name: "Molecule | Verify | Assert SSH config is secure"
   ansible.builtin.assert:
     that:
-      - __testing_ssh_audit_run is defined
-      - __testing_ssh_audit_run['rc'] is defined
+      - __testing_ssh_audit_run is ansible.builtin.defined
+      - __testing_ssh_audit_run['rc'] is ansible.builtin.defined
       - not __testing_ssh_audit_cves
       - not __testing_ssh_audit_warnings
       - not __testing_ssh_audit_failures
@@ -444,7 +444,7 @@
 - name: "Molecule | Verify | Fail if platform not in permission verification matrix"
   ansible.builtin.fail:
     msg: |
-      Platform '{{ __testing_platform_key }}' is not defined in the permission verification matrix.
+      Platform '{{ __testing_platform_key }}' is not ansible.builtin.defined in the permission verification matrix.
 
       To add support for this platform:
       1. Start a molecule container: molecule login --host={{ inventory_hostname }}

@@ -103,8 +103,8 @@
     msg: "{{ __run_sshd_find_sshd_configd_result['files'] }}"
     verbosity: 4
   when:
-    - __run_sshd_find_sshd_configd_result is defined
-    - __run_sshd_find_sshd_configd_result['files'] is defined
+    - __run_sshd_find_sshd_configd_result is ansible.builtin.defined
+    - __run_sshd_find_sshd_configd_result['files'] is ansible.builtin.defined
     - __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.length > 0
 
 
@@ -114,8 +114,8 @@
   register: __run_sshd_slurp_sshd_configd_result
   loop: "{{ __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.map(attribute='path') }}"
   when:
-    - __run_sshd_find_sshd_configd_result is defined
-    - __run_sshd_find_sshd_configd_result['files'] is defined
+    - __run_sshd_find_sshd_configd_result is ansible.builtin.defined
+    - __run_sshd_find_sshd_configd_result['files'] is ansible.builtin.defined
     - __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.length > 0
 
 
@@ -124,8 +124,8 @@
     msg: "{{ __run_sshd_slurp_sshd_configd_result['results'] }}"
     verbosity: 4
   when:
-    - __run_sshd_slurp_sshd_configd_result is defined
-    - __run_sshd_slurp_sshd_configd_result['results'] is defined
+    - __run_sshd_slurp_sshd_configd_result is ansible.builtin.defined
+    - __run_sshd_slurp_sshd_configd_result['results'] is ansible.builtin.defined
     - __run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.length > 0
 
 
@@ -150,8 +150,8 @@
       {%- endfor -%}
       {{ options }}
   when:
-    - __run_sshd_slurp_sshd_configd_result is defined
-    - __run_sshd_slurp_sshd_configd_result['results'] is defined
+    - __run_sshd_slurp_sshd_configd_result is ansible.builtin.defined
+    - __run_sshd_slurp_sshd_configd_result['results'] is ansible.builtin.defined
     - __run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.length > 0
 
 
@@ -160,7 +160,7 @@
     var: __run_sshd_dropin_options
     verbosity: 4
   when:
-    - __run_sshd_dropin_options is defined
+    - __run_sshd_dropin_options is ansible.builtin.defined
     - __run_sshd_dropin_options | ansible.builtin.length > 0
 
 

@@ -7,7 +7,7 @@
     name: "{{ __run_sshd_packages_removal }}"
     state: "absent"
   when:
-    - __run_sshd_packages_removal is defined
+    - __run_sshd_packages_removal is ansible.builtin.defined
     - (__run_sshd_packages_removal | ansible.builtin.length) > 0
 
 
@@ -16,7 +16,7 @@
     name: "{{ __run_sshd_packages_install }}"
     state: "{{ 'latest' if run_sshd_autoupgrade else 'present' }}"
   when:
-    - __run_sshd_packages_install is defined
+    - __run_sshd_packages_install is ansible.builtin.defined
     - (__run_sshd_packages_install | ansible.builtin.length) > 0
 
 
@@ -25,7 +25,7 @@
     path: "{{ item }}"
     state: "absent"
   when:
-    - __run_sshd_paths_removal is defined
+    - __run_sshd_paths_removal is ansible.builtin.defined
     - (__run_sshd_paths_removal | ansible.builtin.length) > 0
   loop: "{{ __run_sshd_paths_removal }}"
 
@@ -38,5 +38,5 @@
     group: "{{ __run_sshd_privseparation_dir_group }}"
     mode: "{{ __run_sshd_privseparation_dir_mode }}"
   when:
-    - __run_sshd_privseparation_dir_path is defined
+    - __run_sshd_privseparation_dir_path is ansible.builtin.defined
     - __run_sshd_privseparation_dir_path | ansible.builtin.length > 0

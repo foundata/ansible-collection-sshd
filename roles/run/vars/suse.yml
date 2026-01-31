@@ -26,12 +26,12 @@ __run_sshd_sshd_settings_overwrite:
 # - /usr/etc/ssh/sshd_config: existing
 # - /etc/ssh/sshd_config: not existing
 # This value gets adjusted if needed (see tasks/config/suse.yml).
-__run_sshd_config_file_path: "/usr/etc/ssh/sshd_config"
-__run_sshd_config_file_mode: "u=rw,g=r,o=" # 0640
+__run_sshd_config_service_file_path: "/usr/etc/ssh/sshd_config"
+__run_sshd_config_service_file_mode: "u=rw,g=r,o=" # 0640
 
-__run_sshd_config_dropin_dir_mode: "u=rwx,g=rx,o=rx" # 0755
+__run_sshd_config_service_dropin_dir_mode: "u=rwx,g=rx,o=rx" # 0755
 
-__run_sshd_config_dropin_file_mode: "{{ __run_sshd_config_file_mode }}"
+__run_sshd_config_service_dropin_file_mode: "{{ __run_sshd_config_service_file_mode }}"
 
 __run_sshd_hostkey_files_mode: "u=rw,g=,o=" # 0600
 

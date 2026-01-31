@@ -11,7 +11,7 @@
   ansible.builtin.set_fact:
     # values have to be in sync with the config set in ../converge/run-role.yml
     run_sshd_config_dropin_file_name: "00-custom-dropin.conf"
-    __run_sshd_config_dropin_file_path: "{{ __run_sshd_config_dropin_dir_path }}/00-custom-dropin.conf"
+    __run_sshd_config_service_dropin_file_path: "{{ __run_sshd_config_service_dropin_dir_path }}/00-custom-dropin.conf"
     # other testing specific values
     __testing_journalctl_executable: >-
       {{
@@ -23,7 +23,7 @@
 
 - name: "Molecule | Verify | Check if sshd drop-in configuration file exists"
   ansible.builtin.stat:
-    path: "{{ __run_sshd_config_dropin_file_path }}"
+    path: "{{ __run_sshd_config_service_dropin_file_path }}"
   register: __testing_dropin_file
 
 
@@ -31,15 +31,15 @@
   ansible.builtin.assert:
     that:
       - __testing_dropin_file['stat']['exists']
-    fail_msg: "The sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' does not exist."
-    success_msg: "The sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' exists."
+    fail_msg: "The sshd drop-in configuration file '{{ __run_sshd_config_service_dropin_file_path }}' does not exist."
+    success_msg: "The sshd drop-in configuration file '{{ __run_sshd_config_service_dropin_file_path }}' exists."
 
 
 - name: "Molecule | Verify | Check if default sshd drop-in configuration file does exists (if custom filename is used)"
   ansible.builtin.stat:
-    path: "{{ __run_sshd_config_dropin_file_path_default }}"
+    path: "{{ __run_sshd_config_service_dropin_file_path_default }}"
   when:
-    - __run_sshd_config_dropin_file_path != __run_sshd_config_dropin_file_path_default
+    - __run_sshd_config_service_dropin_file_path != __run_sshd_config_service_dropin_file_path_default
   register: __testing_dropin_file_default
 
 
@@ -48,11 +48,11 @@
     that:
       - __testing_dropin_file_default['stat']['exists'] is ansible.builtin.false
     fail_msg: >-
-      The default sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' exists (even though a custom filename is used).
+      The default sshd drop-in configuration file '{{ __run_sshd_config_service_dropin_file_path_default }}' exists (even though a custom filename is used).
     success_msg: >-
-      The default sshd drop-in configuration file '{{ __run_sshd_config_dropin_file_path }}' does not exist (valid as custom filename is used).
+      The default sshd drop-in configuration file '{{ __run_sshd_config_service_dropin_file_path_default }}' does not exist (valid as custom filename is used).
   when:
-    - __run_sshd_config_dropin_file_path != __run_sshd_config_dropin_file_path_default
+    - __run_sshd_config_service_dropin_file_path != __run_sshd_config_service_dropin_file_path_default
 
 
 - name: "Molecule | Verify | Gather service facts"
@@ -76,7 +76,7 @@
 
 - name: "Molecule | Verify | Read main sshd config file content"
   ansible.builtin.slurp:
-    src: "{{ __run_sshd_config_file_path }}"
+    src: "{{ __run_sshd_config_service_file_path }}"
   register: __testing_sshd_config
 
 
@@ -96,11 +96,11 @@
       - not (__testing_sshd_config_content is search('(?m)^(?![\t ]*#)[\t ]*AuthorizedKeysFile(?=[\t ]|$)'))
       - not (__testing_sshd_config_content is search('(?m)^(?![\t ]*#)[\t ]*Subsystem(?=[\t ]|$)'))
     fail_msg: >-
-      Expected some options to be commented out in {{ __run_sshd_config_file_path }}, but one or more
+      Expected some options to be commented out in {{ __run_sshd_config_service_file_path }}, but one or more
       were not. Ensure the role's commenting logic ran and these directives exist in the file.
     success_msg: >-
       Expected Options are commented out and not present as active directives in
-      {{ __run_sshd_config_file_path }}.
+      {{ __run_sshd_config_service_file_path }}.
 
 
 # Regression tests for sshd_config commenting logic.
@@ -122,7 +122,7 @@
       - __testing_double_commented_lines | ansible.builtin.length == 0
     fail_msg: >-
       Found {{ __testing_double_commented_lines | ansible.builtin.length }} double-commented lines in
-      {{ __run_sshd_config_file_path }}. This indicates the commenting regex matched
+      {{ __run_sshd_config_service_file_path }}. This indicates the commenting regex matched
       already-commented lines. Lines: {{ __testing_double_commented_lines[:5] }}
     success_msg: "No double-commented lines found - commenting regex is idempotent"
 
@@ -132,9 +132,9 @@
     that:
       - __testing_sshd_config_content is search('(?m)^(?![ \t]*#)[ \t]*Include(?=[ \t]|$)')
     fail_msg: >-
-      No active 'Include' directive found in {{ __run_sshd_config_file_path }}.
+      No active 'Include' directive found in {{ __run_sshd_config_service_file_path }}.
     success_msg: >-
-      Include directive is present and active in {{ __run_sshd_config_file_path }}.
+      Include directive is present and active in {{ __run_sshd_config_service_file_path }}.
 
 
 - name: "Molecule | Verify | Extract configured SSH port"
@@ -230,7 +230,7 @@
 
 - name: "Molecule | Verify | Read drop-in sshd config file content"
   ansible.builtin.slurp:
-    src: "{{ __run_sshd_config_dropin_file_path }}"
+    src: "{{ __run_sshd_config_service_dropin_file_path }}"
   register: __testing_sshd_dropin_config
 
 
@@ -304,23 +304,23 @@
   ansible.builtin.set_fact:
     __testing_paths_to_verify:
 
-      - path: "{{ __run_sshd_config_file_path }}"
+      - path: "{{ __run_sshd_config_service_file_path }}"
         os_matrix_key: "config_file_mode"
-        expected_mode_role: "{{ __run_sshd_config_file_mode }}"
-        expected_owner: "{{ __run_sshd_config_file_owner }}"
-        expected_group: "{{ __run_sshd_config_file_group }}"
+        expected_mode_role: "{{ __run_sshd_config_service_file_mode }}"
+        expected_owner: "{{ __run_sshd_config_service_file_owner }}"
+        expected_group: "{{ __run_sshd_config_service_file_group }}"
 
-      - path: "{{ __run_sshd_config_dropin_dir_path }}"
+      - path: "{{ __run_sshd_config_service_dropin_dir_path }}"
         os_matrix_key: "config_dropin_dir_mode"
-        expected_mode_role: "{{ __run_sshd_config_dropin_dir_mode }}"
-        expected_owner: "{{ __run_sshd_config_dropin_dir_owner }}"
-        expected_group: "{{ __run_sshd_config_dropin_dir_group }}"
+        expected_mode_role: "{{ __run_sshd_config_service_dropin_dir_mode }}"
+        expected_owner: "{{ __run_sshd_config_service_dropin_dir_owner }}"
+        expected_group: "{{ __run_sshd_config_service_dropin_dir_group }}"
 
-      - path: "{{ __run_sshd_config_dropin_file_path }}"
+      - path: "{{ __run_sshd_config_service_dropin_file_path }}"
         os_matrix_key: "config_dropin_file_mode"
-        expected_mode_role: "{{ __run_sshd_config_dropin_file_mode }}"
-        expected_owner: "{{ __run_sshd_config_dropin_file_owner }}"
-        expected_group: "{{ __run_sshd_config_dropin_file_group }}"
+        expected_mode_role: "{{ __run_sshd_config_service_dropin_file_mode }}"
+        expected_owner: "{{ __run_sshd_config_service_dropin_file_owner }}"
+        expected_group: "{{ __run_sshd_config_service_dropin_file_group }}"
 
       - path: "{{ __run_sshd_privseparation_dir_path }}"
         os_matrix_key: "privseparation_mode"

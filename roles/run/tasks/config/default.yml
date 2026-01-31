@@ -45,51 +45,54 @@
     verbosity: 4
 
 
-- name: "Config | Default | Ensure drop-in config directory exists with proper permissions"
+- name: "Config | Default | Ensure drop-in service config directory exists with proper permissions"
   ansible.builtin.file:
-    path: "{{ __run_sshd_config_dropin_dir_path }}"
+    path: "{{ __run_sshd_config_service_dropin_dir_path }}"
     state: "directory"
-    owner: "{{ __run_sshd_config_dropin_dir_owner }}"
-    group: "{{ __run_sshd_config_dropin_dir_group }}"
-    mode: "{{ __run_sshd_config_dropin_dir_mode }}"
+    owner: "{{ __run_sshd_config_service_dropin_dir_owner }}"
+    group: "{{ __run_sshd_config_service_dropin_dir_group }}"
+    mode: "{{ __run_sshd_config_service_dropin_dir_mode }}"
   notify: "run_sshd: restart sshd.service"
 
 
-- name: "Config | Default | Create drop-in config file"
+- name: "Config | Default | Create drop-in service config file"
   ansible.builtin.template:
-    src: "00-managed.conf.j2"
-    dest: "{{ __run_sshd_config_dropin_file_path }}"
-    owner: "{{ __run_sshd_config_dropin_file_owner }}"
-    group: "{{ __run_sshd_config_dropin_file_group }}"
-    mode: "{{ __run_sshd_config_dropin_file_mode }}"
+    src: "drop-in.conf.j2"
+    dest: "{{ __run_sshd_config_service_dropin_file_path }}"
+    owner: "{{ __run_sshd_config_service_dropin_file_owner }}"
+    group: "{{ __run_sshd_config_service_dropin_file_group }}"
+    mode: "{{ __run_sshd_config_service_dropin_file_mode }}"
+  vars:
+    # Pass (and/or adjust) variables needed for the template
+    tpl_settings: "{{ __run_sshd_effective_sshd_settings }}"
   notify: "run_sshd: restart sshd.service"
 
 
-- name: "Config | Default | Remove default drop-in config file (if custom filename is used)"
+- name: "Config | Default | Remove role's default service drop-in config file (if custom filename is used)"
   ansible.builtin.file:
-    path: "{{ __run_sshd_config_dropin_file_path_default }}"
+    path: "{{ __run_sshd_config_service_dropin_file_path_default }}"
     state: "absent"
   when:
-    - __run_sshd_config_dropin_file_path != __run_sshd_config_dropin_file_path_default
+    - __run_sshd_config_service_dropin_file_path != __run_sshd_config_service_dropin_file_path_default
   notify:
     - "run_sshd: restart sshd.service"
 
 
 # "00-ansible.conf" was used up until v1.3.0 of this collection's run role and was not configurable. The default
 # filename was renamed, and the old file must be cleaned up (especially since its filename would take precedence).
-- name: "Config | Default | Remove old drop-in config file from previous role versions (if not set as custom filename)"
+- name: "Config | Default | Remove old drop-in service config file from previous role versions (if not set as custom filename)"
   ansible.builtin.file:
-    path: "{{ __run_sshd_config_dropin_dir_path }}/00-ansible.conf"
+    path: "{{ __run_sshd_config_service_dropin_dir_path }}/00-ansible.conf"
     state: "absent"
   when:
-    - __run_sshd_config_dropin_file_path != (__run_sshd_config_dropin_dir_path ~ '/00-ansible.conf')
+    - __run_sshd_config_service_dropin_file_path != (__run_sshd_config_service_dropin_dir_path ~ '/00-ansible.conf')
   notify:
     - "run_sshd: restart sshd.service"
 
 
-- name: "Config | Default | Search for sshd drop-in config files"
+- name: "Config | Default | Search for drop-in service config files"
   ansible.builtin.find:
-    paths: "{{ __run_sshd_config_dropin_dir_path }}"
+    paths: "{{ __run_sshd_config_service_dropin_dir_path }}"
     patterns: '^.+\.conf$'
     use_regex: true
     hidden: true
@@ -98,7 +101,7 @@
   register: __run_sshd_find_sshd_configd_result
 
 
-- name: "Config | Default | Show search results of sshd drop-in config files"
+- name: "Config | Default | Show search results of drop-in service config files"
   ansible.builtin.debug:
     msg: "{{ __run_sshd_find_sshd_configd_result['files'] }}"
     verbosity: 4
@@ -108,7 +111,7 @@
     - __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.length > 0
 
 
-- name: "Config | Default | Get contents of sshd drop-in config files"
+- name: "Config | Default | Get contents of drop-in service config files"
   ansible.builtin.slurp:
     src: "{{ item }}"
   register: __run_sshd_slurp_sshd_configd_result
@@ -119,7 +122,7 @@
     - __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.length > 0
 
 
-- name: "Config | Default | Show contents of sshd drop-in config files"
+- name: "Config | Default | Show contents of drop-in service config files"
   ansible.builtin.debug:
     msg: "{{ __run_sshd_slurp_sshd_configd_result['results'] }}"
     verbosity: 4
@@ -129,7 +132,7 @@
     - __run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.length > 0
 
 
-- name: "Config | Default | Create a list of options configured in sshd drop-in config files"
+- name: "Config | Default | Create a list of options configured in drop-in service config files"
   ansible.builtin.set_fact:
     __run_sshd_dropin_options: |-
       {%- set options = [] -%}
@@ -155,7 +158,7 @@
     - __run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.length > 0
 
 
-- name: "Config | Default | Show the list of options configured in drop-in sshd config files"
+- name: "Config | Default | Show the list of options configured in drop-in service config files"
   ansible.builtin.debug:
     var: __run_sshd_dropin_options
     verbosity: 4
@@ -164,30 +167,30 @@
     - __run_sshd_dropin_options | ansible.builtin.length > 0
 
 
-- name: "Config | Default | Ensure main config file exists with proper permissions"
+- name: "Config | Default | Ensure main service config file exists with proper permissions"
   ansible.builtin.file:
-    path: "{{ __run_sshd_config_file_path }}"
+    path: "{{ __run_sshd_config_service_file_path }}"
     state: "touch"
-    owner: "{{ __run_sshd_config_file_owner }}"
-    group: "{{ __run_sshd_config_file_group }}"
-    mode: "{{ __run_sshd_config_file_mode }}"
+    owner: "{{ __run_sshd_config_service_file_owner }}"
+    group: "{{ __run_sshd_config_service_file_group }}"
+    mode: "{{ __run_sshd_config_service_file_mode }}"
     access_time: "preserve"
     modification_time: "preserve"
 
 
-- name: "Config | Default | Ensure 'Include' directive exists in main config file"
+- name: "Config | Default | Ensure 'Include' directive exists in main service config file"
   ansible.builtin.lineinfile:
-    path: "{{ __run_sshd_config_file_path }}"
-    line: "Include {{ __run_sshd_config_dropin_dir_path }}/*.conf"
+    path: "{{ __run_sshd_config_service_file_path }}"
+    line: "Include {{ __run_sshd_config_service_dropin_dir_path }}/*.conf"
     state: "present"
     validate: "{{ __run_sshd_sshd_exec_path }} -t -f %s"
   notify: "run_sshd: restart sshd.service"
 
 
 # Remember: It is not possible to overwrite values in the sshd config, first occurrence wins.
-- name: "Config | Default | Comment out duplicates in main config file (if any) to ensure drop-in config precedence"
+- name: "Config | Default | Comment out duplicates in main service config file (if any) to ensure drop-in service config precedence"
   ansible.builtin.replace:
-    path: "{{ __run_sshd_config_file_path }}"
+    path: "{{ __run_sshd_config_service_file_path }}"
     # Notes on the regex:
     # - {{ __run_sshd_dropin_options | join('|') }} will result in something like
     #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms\

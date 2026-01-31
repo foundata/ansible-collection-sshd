@@ -9,3 +9,12 @@
   when:
     - __run_sshd_packages_uninstall is ansible.builtin.defined
     - (__run_sshd_packages_uninstall | ansible.builtin.length) > 0
+
+
+- name: "Setup | Uninstall | Remove drop-in configuration files created by the role"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: "absent"
+  loop:
+    - "{{ __run_sshd_config_service_dropin_file_path }}"
+    - "{{__run_sshd_config_service_dropin_file_path_default }}"

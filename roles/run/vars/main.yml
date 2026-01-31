@@ -171,29 +171,29 @@ __run_sshd_sshd_settings_overwrite: {}
 # These variables define the different locations of configuration files, the
 # include directory, and the Ansible-managed configuration file, ensuring
 # consistent file handling across distributions.
-__run_sshd_config_file_path: "/etc/ssh/sshd_config"
-__run_sshd_config_file_owner: "root"
-__run_sshd_config_file_group: "root"
-__run_sshd_config_file_mode: "u=rw,g=,o=" # 0600
+__run_sshd_config_service_file_path: "/etc/ssh/sshd_config"
+__run_sshd_config_service_file_owner: "root"
+__run_sshd_config_service_file_group: "root"
+__run_sshd_config_service_file_mode: "u=rw,g=,o=" # 0600
 
-__run_sshd_config_dropin_dir_path: "/etc/ssh/sshd_config.d"
-__run_sshd_config_dropin_dir_owner: "{{ __run_sshd_config_file_owner }}"
-__run_sshd_config_dropin_dir_group: "{{ __run_sshd_config_file_group }}"
-__run_sshd_config_dropin_dir_mode: "u=rwx,g=,o=" # 0700
+__run_sshd_config_service_dropin_dir_path: "/etc/ssh/sshd_config.d"
+__run_sshd_config_service_dropin_dir_owner: "{{ __run_sshd_config_service_file_owner }}"
+__run_sshd_config_service_dropin_dir_group: "{{ __run_sshd_config_service_file_group }}"
+__run_sshd_config_service_dropin_dir_mode: "u=rwx,g=,o=" # 0700
 
-__run_sshd_config_dropin_file_path: "{{ __run_sshd_config_dropin_dir_path }}/{{ run_sshd_config_dropin_file_name }}"
-__run_sshd_config_dropin_file_path_default: "{{ __run_sshd_config_dropin_dir_path }}/00-managed.conf" # needed to detect non-default names
-__run_sshd_config_dropin_file_owner: "{{ __run_sshd_config_file_owner }}"
-__run_sshd_config_dropin_file_group: "{{ __run_sshd_config_file_group }}"
-__run_sshd_config_dropin_file_mode: "{{ __run_sshd_config_file_mode }}"
+__run_sshd_config_service_dropin_file_path: "{{ __run_sshd_config_service_dropin_dir_path }}/{{ run_sshd_config_dropin_file_name }}"
+__run_sshd_config_service_dropin_file_path_default: "{{ __run_sshd_config_service_dropin_dir_path }}/00-managed.conf" # needed to detect non-default names
+__run_sshd_config_service_dropin_file_owner: "{{ __run_sshd_config_service_file_owner }}"
+__run_sshd_config_service_dropin_file_group: "{{ __run_sshd_config_service_file_group }}"
+__run_sshd_config_service_dropin_file_mode: "{{ __run_sshd_config_service_file_mode }}"
 
 __run_sshd_hostkey_rsa_file_path: "/etc/ssh/ssh_host_rsa_key"
 __run_sshd_hostkey_dsa_file_path: "/etc/ssh/ssh_host_dsa_key"
 __run_sshd_hostkey_ecdsa_file_path: "/etc/ssh/ssh_host_ecdsa_key"
 __run_sshd_hostkey_ed25519_file_path: "/etc/ssh/ssh_host_ed25519_key"
-__run_sshd_hostkey_files_owner: "{{ __run_sshd_config_file_owner }}"
-__run_sshd_hostkey_files_group: "{{ __run_sshd_config_file_group }}"
-__run_sshd_hostkey_files_mode: "{{ __run_sshd_config_file_mode }}"
+__run_sshd_hostkey_files_owner: "{{ __run_sshd_config_service_file_owner }}"
+__run_sshd_hostkey_files_group: "{{ __run_sshd_config_service_file_group }}"
+__run_sshd_hostkey_files_mode: "{{ __run_sshd_config_service_file_mode }}"
 
 
 # Privilege separation directory configuration for SSH daemon. These variables

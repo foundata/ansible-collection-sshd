@@ -1,0 +1,33 @@
+{#-
+  Render settings (dict) to sshd config file format.
+
+  Rules:
+  - Strings (including multiline strings) and other scalar values render on a
+    single line:
+      Key <value>
+    No special handling for multiline indentation/alignment.
+  - Non-string iterables (e.g., lists/tuples/sets) render as multiple lines:
+      Key item1
+      Key item2
+    (not space-separated on one line).
+  - Booleans render as yes/no strings.
+  - Numbers render as-is.
+  - Nested mappings are not expanded; they will render via their default string
+    representation if provided as a value.
+-#}
+
+# {{ ansible_managed }}
+
+{% for key, value in tpl_settings.items() %}
+{%   if value is sameas true %}
+{{ key }} yes
+{%   elif value is sameas false %}
+{{ key }} no
+{%   elif value is iterable and value is not string %}
+{%     for item in value %}
+{{ key }} {{ item }}
+{%     endfor %}
+{%   else %}
+{{ key }} {{ value }}
+{%   endif %}
+{% endfor %}

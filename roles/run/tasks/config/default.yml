@@ -31,7 +31,12 @@
     argv:
       - "{{ __run_sshd_sshkeygen_exec_path }}"
       - "-A"
-  when: __run_sshd_hostkey_stats.results | ansible.builtin.map(attribute='stat.exists') | ansible.builtin.select('equalto', false) | ansible.builtin.list | ansible.builtin.length > 0
+  when:
+    - __run_sshd_hostkey_stats.results
+      | ansible.builtin.map(attribute='stat.exists')
+      | ansible.builtin.select('equalto', false)
+      | ansible.builtin.list
+      | ansible.builtin.length > 0
   changed_when:
     - __run_sshd_sshkeygen_result['rc'] == 0
     - __run_sshd_sshkeygen_result['stdout'] | ansible.builtin.trim | ansible.builtin.length > 0
@@ -136,7 +141,10 @@
   ansible.builtin.set_fact:
     __run_sshd_dropin_options: |-
       {%- set options = [] -%}
-      {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results'] | ansible.builtin.map(attribute='content') | ansible.builtin.map('b64decode') | ansible.builtin.list) -%}
+      {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results']
+                               | ansible.builtin.map(attribute='content')
+                               | ansible.builtin.map('b64decode')
+                               | ansible.builtin.list) -%}
         {%- for line in file_content.splitlines() -%}
           {%- if line | ansible.builtin.regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
             {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') | ansible.builtin.trim -%}

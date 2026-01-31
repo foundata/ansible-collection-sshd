@@ -1,5 +1,7 @@
 ---
 
 minor_changes:
-  - "``foundata.sshd.run``: Added openSUSE Leap 16.0 as a supported platform."
-  - "Molecule: Added openSUSE Leap 16.0 as a test target platform."
+  - >
+    ``foundata.sshd.run``: Added openSUSE Leap 16.0 as a supported platform.
+  - >
+    Molecule: Added openSUSE Leap 16.0 as a test target platform.

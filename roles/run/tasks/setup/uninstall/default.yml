@@ -17,4 +17,4 @@
     state: "absent"
   loop:
     - "{{ __run_sshd_config_service_dropin_file_path }}"
-    - "{{__run_sshd_config_service_dropin_file_path_default }}"
+    - "{{ __run_sshd_config_service_dropin_file_path_default }}"

@@ -13,7 +13,7 @@ __run_sshd_packages_install:
 
 __run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
 
-__run_sshd_sshd_settings_overwrite:
+__run_sshd_service_settings_overwrite:
   # Remove 'PrintLastLog' for SUSE systems where openssh was built with --disable-lastlog
   # (cf. https://build.opensuse.org/projects/.../packages/openssh/files/openssh.spec)
   # This applies to openSUSE Leap >= 15.5, openSUSE Tumbleweed, and future SUSE releases.

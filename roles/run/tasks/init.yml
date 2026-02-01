@@ -145,11 +145,11 @@
   ansible.builtin.set_fact:
     __run_sshd_effective_sshd_settings: >-
       {{
-        __run_sshd_sshd_settings_defaults
+        __run_sshd_service_settings_defaults
         | ansible.builtin.dict2items
-        | ansible.builtin.rejectattr('key', 'match', '^(' ~ (run_sshd_sshd_settings.keys() | join('|')) ~ ')$', ignorecase=true)
+        | ansible.builtin.rejectattr('key', 'match', '^(' ~ (run_sshd_service_settings.keys() | join('|')) ~ ')$', ignorecase=true)
         | items2dict
-        | ansible.builtin.combine(run_sshd_sshd_settings)
+        | ansible.builtin.combine(run_sshd_service_settings)
         | ansible.builtin.dict2items
         | ansible.builtin.selectattr('value', 'ne', None)
         | items2dict
@@ -162,32 +162,32 @@
       {{
         __run_sshd_effective_sshd_settings
         | ansible.builtin.dict2items
-        | ansible.builtin.rejectattr('key', 'match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
+        | ansible.builtin.rejectattr('key', 'match', '^(' ~ (__run_sshd_service_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
         | items2dict
-        | ansible.builtin.combine(__run_sshd_sshd_settings_overwrite)
+        | ansible.builtin.combine(__run_sshd_service_settings_overwrite)
         | ansible.builtin.dict2items
         | ansible.builtin.selectattr('value', 'ne', None)
         | items2dict
       }}
   when:
-    - __run_sshd_sshd_settings_overwrite | ansible.builtin.length > 0
+    - __run_sshd_service_settings_overwrite | ansible.builtin.length > 0
 
 
 - name: "Init | Warn about user settings overwritten by OS-specific constraints (if any)"
   vars:
     __run_sshd_overwritten_keys: >-
       {{
-        run_sshd_sshd_settings.keys()
+        run_sshd_service_settings.keys()
         | ansible.builtin.list
-        | ansible.builtin.select('match', '^(' ~ (__run_sshd_sshd_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
+        | ansible.builtin.select('match', '^(' ~ (__run_sshd_service_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
         | ansible.builtin.list
       }}
   ansible.builtin.debug:
     msg: >-
-      The following sshd settings from 'run_sshd_sshd_settings' are being
+      The following sshd settings from 'run_sshd_service_settings' are being
       overwritten by OS-specific constraints: {{ __run_sshd_overwritten_keys | join(', ') }}.
       This is typically due to the sshd build on this platform not supporting these options.
     verbosity: 3
   when:
-    - __run_sshd_sshd_settings_overwrite | ansible.builtin.length > 0
+    - __run_sshd_service_settings_overwrite | ansible.builtin.length > 0
     - __run_sshd_overwritten_keys | ansible.builtin.length > 0

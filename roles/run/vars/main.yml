@@ -104,7 +104,7 @@ __run_sshd_paths_removal: []
 #       - "/etc/ssh/ssh_host_ed25519_key"
 #       - "/etc/ssh/ssh_host_ecdsa_key"
 #   This will generate multiple entries in the config file, one per list item.
-__run_sshd_sshd_settings_defaults:
+__run_sshd_service_settings_defaults:
   Port: 22
   # Security: Strong host key cryptography only (=ed25519 and nothing else)
   HostKey:
@@ -164,7 +164,7 @@ __run_sshd_sshd_settings_defaults:
 # Special variable intended to be overridden in OS-specific variable files.
 # Commonly used to selectively drop sshd settings by setting their value to
 # null.
-__run_sshd_sshd_settings_overwrite: {}
+__run_sshd_service_settings_overwrite: {}
 
 
 # Configuration file paths, ownership, and permissions for the SSH daemon.
@@ -181,7 +181,7 @@ __run_sshd_config_service_dropin_dir_owner: "{{ __run_sshd_config_service_file_o
 __run_sshd_config_service_dropin_dir_group: "{{ __run_sshd_config_service_file_group }}"
 __run_sshd_config_service_dropin_dir_mode: "u=rwx,g=,o=" # 0700
 
-__run_sshd_config_service_dropin_file_path: "{{ __run_sshd_config_service_dropin_dir_path }}/{{ run_sshd_config_dropin_file_name }}"
+__run_sshd_config_service_dropin_file_path: "{{ __run_sshd_config_service_dropin_dir_path }}/{{ run_sshd_config_service_dropin_file_name }}"
 __run_sshd_config_service_dropin_file_path_default: "{{ __run_sshd_config_service_dropin_dir_path }}/00-managed.conf" # needed to detect non-default names
 __run_sshd_config_service_dropin_file_owner: "{{ __run_sshd_config_service_file_owner }}"
 __run_sshd_config_service_dropin_file_group: "{{ __run_sshd_config_service_file_group }}"

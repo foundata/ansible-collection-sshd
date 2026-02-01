@@ -54,7 +54,7 @@ run_sshd_autoupgrade: false
 run_sshd_service_state: "enabled"
 
 # sshd configuration values (additional ones or to overwrite defaults; see
-# `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).
+# `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).
 #
 # Simply use standard SSH option names as keys with their corresponding values.
 # Special cases:
@@ -72,8 +72,8 @@ run_sshd_service_state: "enabled"
 # - Type: dict
 # - Required: No
 # - Default: {}
-run_sshd_sshd_settings:
-  {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults
+run_sshd_service_settings:
+  {} # see __run_sshd_service_settings_defaults in vars/main.yml for the defaults
 
 # Filename of the drop-in configuration file to be placed in
 # `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix
@@ -87,4 +87,4 @@ run_sshd_sshd_settings:
 # - Type: str
 # - Required: No
 # - Default: 00-managed.conf
-run_sshd_config_dropin_file_name: "00-managed.conf"
+run_sshd_config_service_dropin_file_name: "00-managed.conf"

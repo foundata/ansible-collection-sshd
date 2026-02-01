@@ -62,10 +62,10 @@ argument_specs:
           - "running"
           - "unmanaged"
 
-      run_sshd_sshd_settings:
+      run_sshd_service_settings:
         description: |
           sshd service configuration values (additional ones or to overwrite defaults;
-          see `__run_sshd_sshd_settings_defaults` in `vars/main.yml` for them).
+          see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).
 
           Simply use standard SSH option names as keys with their corresponding values.
           Special cases:
@@ -80,9 +80,9 @@ argument_specs:
             ```
             This will generate multiple entries in the config file, one per list item.
         type: "dict"
-        default: {} # see __run_sshd_sshd_settings_defaults in vars/main.yml for the defaults
+        default: {} # see __run_sshd_service_settings_defaults in vars/main.yml for the defaults
 
-      run_sshd_config_dropin_file_name:
+      run_sshd_config_service_dropin_file_name:
         description: |
           Filename of the drop-in configuration file to be placed in
           `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix

@@ -10,7 +10,7 @@
 - name: "Molecule | Verify | Set / overwrite some expected configuration data "
   ansible.builtin.set_fact:
     # values have to be in sync with the config set in ../converge/run-role.yml
-    run_sshd_config_dropin_file_name: "00-custom-dropin.conf"
+    run_sshd_config_service_dropin_file_name: "00-custom-dropin.conf"
     __run_sshd_config_service_dropin_file_path: "{{ __run_sshd_config_service_dropin_dir_path }}/00-custom-dropin.conf"
     # other testing specific values
     __testing_journalctl_executable: >-
@@ -225,7 +225,7 @@
 
 
 # OS-specific overwrite verification (text-based)
-# Ensures that any key defined in __run_sshd_sshd_settings_overwrite does not
+# Ensures that any key defined in __run_sshd_service_settings_overwrite does not
 # appear as an active directive in the sshd_config file content.
 
 - name: "Molecule | Verify | Read drop-in sshd config file content"
@@ -247,17 +247,17 @@
       - not (__testing_sshd_dropin_config_content is search('(?mi)^(?![\t ]*#)[\t ]*' ~ item ~ '(?=[\t ]|$)'))
     fail_msg: >-
       Directive '{{ item }}' was found as active in sshd drop-in config but should have
-      been removed by __run_sshd_sshd_settings_overwrite. This OS does not support this
+      been removed by __run_sshd_service_settings_overwrite. This OS does not support this
       option or it conflicts with OS-specific requirements.
     success_msg: "Directive '{{ item }}' correctly absent from sshd_config."
   loop: >-
     {{
-      __run_sshd_sshd_settings_overwrite | ansible.builtin.dict2items
+      __run_sshd_service_settings_overwrite | ansible.builtin.dict2items
       | ansible.builtin.selectattr('value', 'in', [none, ''])
       | ansible.builtin.map(attribute='key') | ansible.builtin.list
     }}
   when:
-    - __run_sshd_sshd_settings_overwrite | ansible.builtin.length > 0
+    - __run_sshd_service_settings_overwrite | ansible.builtin.length > 0
 
 
 - name: "Molecule | Verify | Assert overwritten settings with specific values are present in sshd_config"
@@ -270,16 +270,16 @@
         )
     fail_msg: >-
       Directive '{{ item['key'] }}' with value '{{ item['value'] }}' was not found in sshd drop-in config
-      but should have been set by __run_sshd_sshd_settings_overwrite.
+      but should have been set by __run_sshd_service_settings_overwrite.
     success_msg: "Directive '{{ item['key'] }}' correctly set to '{{ item['value'] }}' in sshd_config."
   loop: >-
     {{
-      __run_sshd_sshd_settings_overwrite | ansible.builtin.dict2items
+      __run_sshd_service_settings_overwrite | ansible.builtin.dict2items
       | ansible.builtin.rejectattr('value', 'in', [none, ''])
       | ansible.builtin.list
     }}
   when:
-    - __run_sshd_sshd_settings_overwrite | ansible.builtin.length > 0
+    - __run_sshd_service_settings_overwrite | ansible.builtin.length > 0
 
 
 # Permission Verification Tests

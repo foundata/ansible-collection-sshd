@@ -6,6 +6,6 @@
     name: "foundata.sshd.run"
   vars:
     run_sshd_state: "present"
-    run_sshd_config_dropin_file_name: "00-custom-dropin.conf"
-    run_sshd_sshd_settings:
+    run_sshd_config_service_dropin_file_name: "00-custom-dropin.conf"
+    run_sshd_service_settings:
       PrintLastLog: true # should get overwritten on SUSE due to incompatibility

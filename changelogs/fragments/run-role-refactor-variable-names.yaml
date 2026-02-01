@@ -1,0 +1,9 @@
+---
+
+breaking_changes:
+  - |
+    ``foundata.sshd.run``: Renamed user-facing variables for consistency with naming
+    conventions. Update your playbooks and inventory accordingly:
+
+    - ``run_sshd_sshd_settings`` → ``run_sshd_service_settings``
+    - ``run_sshd_config_dropin_file_name`` → ``run_sshd_config_service_dropin_file_name``

@@ -72,8 +72,7 @@ run_sshd_service_state: "enabled"
 # - Type: dict
 # - Required: No
 # - Default: {}
-run_sshd_service_settings:
-  {} # see __run_sshd_service_settings_defaults in vars/main.yml for the defaults
+run_sshd_service_settings: {} # see __run_sshd_service_settings_defaults in vars/main.yml for the defaults
 
 # Filename of the drop-in configuration file to be placed in
 # `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix

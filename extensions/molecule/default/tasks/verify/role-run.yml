@@ -1,4 +1,4 @@
-# Tasks for the Molecule verify stage: Check collection role "run" outcomes.
+# Check collection role "run" outcomes.
 
 - name: "Molecule | Verify | Initialize the foundata.sshd.run role (without actually running it; get and expose variables)"
   ansible.builtin.include_role:
@@ -7,12 +7,22 @@
     public: true
 
 
-- name: "Molecule | Verify | Set / overwrite some expected configuration data "
+- name: "Molecule | Verify | Set run_sshd* role parameters as facts from __testing_state"
   ansible.builtin.set_fact:
-    # values have to be in sync with the config set in ../converge/run-role.yml
-    run_sshd_config_service_dropin_file_name: "00-custom-dropin.conf"
-    __run_sshd_config_service_dropin_file_path: "{{ __run_sshd_config_service_dropin_dir_path }}/00-custom-dropin.conf"
-    # other testing specific values
+    "{{ item['key'] }}": "{{ item['value'] }}"
+  loop: >-
+    {{
+      __testing_state
+      | ansible.builtin.dict2items
+      | ansible.builtin.selectattr('key', 'match', '^run_sshd_')
+      | ansible.builtin.list
+    }}
+
+
+- name: "Molecule | Verify | Set / overwrite other expected configuration or testing data "
+  ansible.builtin.set_fact:
+    __run_sshd_config_service_dropin_file_path: >-
+      {{ __run_sshd_config_service_dropin_dir_path }}/{{ run_sshd_config_service_dropin_file_name }}
     __testing_journalctl_executable: >-
       {{
         '/bin/journalctl'

@@ -1,11 +1,33 @@
-# Tasks for the Molecule converge stage: Execute the collection role "run"
-# against all driver-created instances.
+# Execute the collection role "run" against all driver-created instances.
+
+- name: "Molecule | Converge | Store run_sshd* role parameters in __testing_state"
+  ansible.builtin.include_tasks:
+    file: "../tasks/state_update.yml"
+  vars:
+    __testing_state_update:
+      # set all role configuration variables
+      run_sshd_state: "present"
+      run_sshd_config_service_dropin_file_name: "00-custom-dropin.conf"
+      run_sshd_service_settings:
+        PrintLastLog: true # should get overwritten on SUSE due to incompatibility
+
+
+- name: "Molecule | Converge | Set run_sshd* role parameters as facts from __testing_state"
+  ansible.builtin.set_fact:
+    "{{ item['key'] }}": "{{ item['value'] }}"
+  loop: >-
+    {{
+      __testing_state
+      | ansible.builtin.dict2items
+      | ansible.builtin.selectattr('key', 'match', '^run_sshd_')
+      | ansible.builtin.list
+    }}
+
 
 - name: "Molecule | Converge | Include the foundata.sshd.run role"
   ansible.builtin.include_role:
     name: "foundata.sshd.run"
-  vars:
-    run_sshd_state: "present"
-    run_sshd_config_service_dropin_file_name: "00-custom-dropin.conf"
-    run_sshd_service_settings:
-      PrintLastLog: true # should get overwritten on SUSE due to incompatibility
+  # vars: All run_sshd* variables are set as facts and passed this way to
+  #       the role. This enables persisting the values in __testing_state
+  #       and restoring them in later stages (e.g. verify) without manually
+  #       duplicating data across playbooks.

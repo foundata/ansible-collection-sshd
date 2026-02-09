@@ -167,10 +167,9 @@ __run_sshd_service_settings_defaults:
 __run_sshd_service_settings_overwrite: {}
 
 
-# Configuration file paths, ownership, and permissions for the SSH daemon.
-# These variables define the different locations of configuration files, the
-# include directory, and the Ansible-managed configuration file, ensuring
-# consistent file handling across distributions.
+# Configuration file paths, ownership, and permissions. These variables define
+# the different locations of configuration files, include directories, and
+# Ansible-managed files, ensuring consistent file handling across distributions.
 __run_sshd_config_service_file_path: "/etc/ssh/sshd_config"
 __run_sshd_config_service_file_owner: "root"
 __run_sshd_config_service_file_group: "root"
@@ -218,9 +217,7 @@ __run_sshd_privseparation_dir_group: "root"
 __run_sshd_privseparation_dir_mode: "u=rwx,g=x,o=x" # 0711
 
 
-# SSH daemon service name and executable paths.
-# These variables define the systemd service name for SSH daemon
-# and the paths to the sshd executables for service management and validation.
+# Daemon service name and paths of executables for management and validation.
 __run_sshd_sshd_servicename: "sshd.service"
 __run_sshd_sshd_exec_path: "/usr/sbin/sshd"
 __run_sshd_sshkeygen_exec_path: "/usr/bin/ssh-keygen"

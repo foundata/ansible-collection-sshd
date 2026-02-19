@@ -78,7 +78,7 @@ __run_sshd_packages_install:
 # software. This is usually the case if there are common dependencies like
 # "curl" or "openssl" which typically should remain installed even after
 # uninstalling the software managed by this role.
-__run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
+__run_sshd_packages_uninstall: "{{ __run_sshd_packages_install }}"
 
 
 # List of package names to be removed unconditionally before installation

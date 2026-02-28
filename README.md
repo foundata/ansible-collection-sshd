@@ -31,7 +31,7 @@ It provides resources to manage and use the [OpenSSH](https://www.openssh.com/) 
 
 ### Role: `foundata.sshd.run`
 
-The main resource of the collection to configure and maintain `sshd` with security best practices by default. See the [role's `README.md`](./roles/run/README.md) for more information and usage examples.
+The primary resource in this collection to configure and maintain `sshd` with security best practices by default. See the [role's `README.md`](./roles/run/README.md) for more information and usage examples.
 
 
 

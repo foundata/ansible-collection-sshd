@@ -1,0 +1,7 @@
+---
+
+release_summary: |
+  Release Date: 2026-05-10
+
+  Mostly a maintenance release, but it includes a breaking change, so this is a
+  major version bump according to SemVer.

@@ -4,6 +4,39 @@ foundata.sshd Ansible collection Release Notes
 
 .. contents:: Topics
 
+v2.0.0
+======
+
+Release Summary
+---------------
+
+Release Date: 2026-05-10
+
+Mostly a maintenance release, but it includes a breaking change, so this is a
+major version bump according to SemVer.
+
+Minor Changes
+-------------
+
+- Added Fedora 44 as supported platform for all collection roles and Molecule test scenarios.
+- Added Ubuntu 26.04 LTS (Resolute Raccoon) as supported platform for all collection roles and Molecule test scenarios.
+- ``foundata.sshd.run``: Drop ``PrintLastLog`` option on SUSE (openssh built with --disable-lastlog).
+- ``foundata.sshd.run``: Implement case-insensitive key handling for sshd settings to properly handle keys like 'Port' vs 'port'.
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- ``foundata.sshd.run``: Renamed user-facing variables for consistency with naming
+  conventions. Update your playbooks and inventory accordingly:
+
+  - ``run_sshd_sshd_settings`` → ``run_sshd_service_settings``
+  - ``run_sshd_config_dropin_file_name`` → ``run_sshd_config_service_dropin_file_name``
+
+Removed Features (previously deprecated)
+----------------------------------------
+
+- Removed Fedora 42 support (End of Life, EOL) from collection roles and Molecule scenarios. The collection may still work on Fedora 42, but no testing or bugfixes will be provided. A warning will be displayed when used on unsupported platforms.
+
 v1.4.0
 ======
 

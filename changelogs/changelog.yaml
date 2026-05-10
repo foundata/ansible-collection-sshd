@@ -1,6 +1,49 @@
 ---
 ancestor: null
 releases:
+  2.0.0:
+    changes:
+      breaking_changes:
+        - "``foundata.sshd.run``: Renamed user-facing variables for consistency with\
+          \ naming\nconventions. Update your playbooks and inventory accordingly:\n\
+          \n- ``run_sshd_sshd_settings`` \u2192 ``run_sshd_service_settings``\n- ``run_sshd_config_dropin_file_name``\
+          \ \u2192 ``run_sshd_config_service_dropin_file_name``\n"
+      minor_changes:
+        - 'Added Fedora 44 as supported platform for all collection roles and Molecule
+          test scenarios.
+
+          '
+        - 'Added Ubuntu 26.04 LTS (Resolute Raccoon) as supported platform for all
+          collection roles and Molecule test scenarios.
+
+          '
+        - '``foundata.sshd.run``: Drop ``PrintLastLog`` option on SUSE (openssh built
+          with --disable-lastlog).'
+        - '``foundata.sshd.run``: Implement case-insensitive key handling for sshd
+          settings to properly handle keys like ''Port'' vs ''port''.'
+      release_summary: 'Release Date: 2026-05-10
+
+
+        Mostly a maintenance release, but it includes a breaking change, so this is
+        a
+
+        major version bump according to SemVer.
+
+        '
+      removed_features:
+        - 'Removed Fedora 42 support (End of Life, EOL) from collection roles and
+          Molecule scenarios. The collection may still work on Fedora 42, but no testing
+          or bugfixes will be provided. A warning will be displayed when used on unsupported
+          platforms.
+
+          '
+    fragments:
+      - 2.0.0-release.yaml
+      - platform-update-add-fedora44-remove-fedora42.yaml
+      - platform-update-add-ubuntu2604.yaml
+      - run-role-case-insensitive-keys-printlastlog-suse.yaml
+      - run-role-refactor-variable-names.yaml
+    release_date: '2026-05-10'
   1.4.0:
     changes:
       minor_changes:

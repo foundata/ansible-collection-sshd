@@ -4,4 +4,4 @@
   ansible.builtin.include_role:
     name: "foundata.sshd.run"
   vars:
-    run_fail2ban_state: "absent"
+    run_sshd_state: "absent"

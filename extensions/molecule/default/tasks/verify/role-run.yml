@@ -418,14 +418,20 @@
         config_dropin_file_mode: "0644"
         hostkey_mode: "0600"
         privseparation_mode: "0755"
+      "Ubuntu-26":
+        config_file_mode: "0644"
+        config_dropin_dir_mode: "0755"
+        config_dropin_file_mode: "0644"
+        hostkey_mode: "0600"
+        privseparation_mode: "0755"
       # RedHat family
-      "Fedora-42":
+      "Fedora-43":
         config_file_mode: "0600"
         config_dropin_dir_mode: "0700"
         config_dropin_file_mode: "0600"
         hostkey_mode: "0600"
         privseparation_mode: "0711"
-      "Fedora-43":
+      "Fedora-44":
         config_file_mode: "0600"
         config_dropin_dir_mode: "0700"
         config_dropin_file_mode: "0600"
@@ -472,8 +478,9 @@
       Platform '{{ __testing_platform_key }}' is not ansible.builtin.defined in the permission verification matrix.
 
       To add support for this platform:
-      1. Start a molecule container: molecule login --host={{ inventory_hostname }}
-      2. Purge openssh and remove config directories:
+      1. If not already done: Run the tests with --destroy="never"
+      2. Log into the failed container: molecule login --host={{ inventory_hostname }}
+      3. Purge openssh and remove config directories:
          - Debian/Ubuntu specific:
            apt purge -y openssh-server
          - Red Hat/Fedora specific:
@@ -482,26 +489,27 @@
            zypper remove -y openssh-server
          - All:
            rm -rf /etc/ssh /usr/etc/ssh
-      3. Reinstall openssh-server fresh:
+      4. Reinstall openssh-server:
          - Debian/Ubuntu:
            apt update && apt install -y openssh-server
          - Red Hat/Fedora:
            dnf install -y openssh-server
          - SUSE:
            zypper install -y openssh-server
-      4. Restart sshd (may (re)create privilege separation dir):
+      5. Restart sshd (may (re)create privilege separation dir):
          systemctl restart sshd.service
-      5. Check the default permissions:
-         - All:
+      6. Check the default permissions.
+         - Files on platforms:
            stat -c '%a %n' /etc/ssh/sshd_config /etc/ssh/sshd_config.d /etc/ssh/ssh_host_*_key 2>/dev/null
-         - Red Hat/Fedora specific:
-           stat -c '%a %n' /usr/share/empty.sshd 2>/dev/null
-         - Debian/Ubuntu specific:
-           stat -c '%a %n' /run/sshd 2>/dev/null
-         - openSUSE specific:
-           stat -c '%a %n' /usr/etc/ssh/sshd_config 2>/dev/null
-           stat -c '%a %n' /var/lib/empty 2>/dev/null
-      6. Add the values to __testing_os_permission_matrix above.
+         - And the platform specific ones:
+           - Red Hat/Fedora specific:
+             stat -c '%a %n' /usr/share/empty.sshd 2>/dev/null
+           - Debian/Ubuntu specific:
+             stat -c '%a %n' /run/sshd 2>/dev/null
+           - openSUSE specific:
+             stat -c '%a %n' /usr/etc/ssh/sshd_config 2>/dev/null
+             stat -c '%a %n' /var/lib/empty 2>/dev/null
+      7. Add the values to __testing_os_permission_matrix above.
   when:
     - __testing_platform_key not in __testing_os_permission_matrix.keys()
 

@@ -120,7 +120,7 @@ The following variables can be configured for this role:
 | `run_sshd_state` | `str` | No | `"present"` | Determines whether the managed resources should be `present` or `absent`.<br><br>`present` ensures that required components, such as software packages, are installed and configured.<br><br>`absent` reverts changes as much as possible, such as […](#variable-run_sshd_state) |
 | `run_sshd_autoupgrade` | `bool` | No | `false` | If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one). |
 | `run_sshd_service_state` | `str` | No | `"enabled"` | Defines the status of the service(s).<br><br>`enabled`: Service is running and will start automatically at boot.<br><br>`disabled`: Service is stopped and will not start automatically at boot.<br><br>`running` Service is running but will not start […](#variable-run_sshd_service_state) |
-| `run_sshd_service_settings` | `dict` | No | `{}` | sshd configuration values (additional ones or to overwrite defaults; see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special cases:<br><br>- […](#variable-run_sshd_service_settings) |
+| `run_sshd_service_settings` | `dict` | No | `{}` | sshd service configuration values (additional ones or to overwrite defaults; see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special […](#variable-run_sshd_service_settings) |
 | `run_sshd_config_service_dropin_file_name` | `str` | No | `"00-managed.conf"` | Filename of the drop-in configuration file to be placed in `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix ensures early loading and thus higher precedence over files with higher-numbered prefixes.<br><br>If a non-default […](#variable-run_sshd_config_service_dropin_file_name) |
 
 ### `run_sshd_state`<a id="variable-run_sshd_state"></a>
@@ -146,7 +146,9 @@ deleting created users, stopping services, restoring modified settings, …
 
 [*⇑ Back to ToC ⇑*](#toc)
 
-If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one).
+If set to `true`, all managed packages will be upgraded during each Ansible
+run (e.g., when the package provider detects a newer version than the
+currently installed one).
 
 - **Type**: `bool`
 - **Required**: No
@@ -186,14 +188,14 @@ status applies to all services if multiple are being managed by this role.
 
 [*⇑ Back to ToC ⇑*](#toc)
 
-sshd configuration values (additional ones or to overwrite defaults; see
-`__run_sshd_service_settings_defaults` in `vars/main.yml` for them).
+sshd service configuration values (additional ones or to overwrite defaults;
+see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).
 
 Simply use standard SSH option names as keys with their corresponding values.
 Special cases:
 
-- For boolean values, use `true`/`false` (these will be converted to yes/no
-  by configuration tasks as needed).
+- For boolean values, use `true`/`false` (these will be converted to
+  "yes"/"no" strings by the role as needed).
 - For options that can have multiple values, you can use a list:
   ```
   HostKey:
@@ -212,12 +214,14 @@ Special cases:
 
 [*⇑ Back to ToC ⇑*](#toc)
 
-Filename of the drop-in configuration file to be placed in `/etc/ssh/sshd_config.d`.
-Defaults to `00-managed.conf`. The `00-` prefix ensures early loading and thus
-higher precedence over files with higher-numbered prefixes.
+Filename of the drop-in configuration file to be placed in
+`/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix
+ensures early loading and thus higher precedence over files with
+higher-numbered prefixes.
 
-If a non-default filename is used, any existing `/etc/ssh/sshd_config.d/00-managed.conf`
-from previous Ansible runs will be removed automatically to prevent conflicts.
+If a non-default filename is used, any existing
+`/etc/ssh/sshd_config.d/00-managed.conf` from previous Ansible runs will be
+removed automatically to prevent conflicts.
 
 - **Type**: `str`
 - **Required**: No

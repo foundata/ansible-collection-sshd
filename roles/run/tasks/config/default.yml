@@ -67,6 +67,10 @@
     owner: "{{ __run_sshd_config_service_dropin_file_owner }}"
     group: "{{ __run_sshd_config_service_dropin_file_group }}"
     mode: "{{ __run_sshd_config_service_dropin_file_mode }}"
+    # Validate the rendered drop-in with 'sshd -t' before it is put in place, so
+    # an invalid run_sshd_service_settings value cannot reach the restart handler
+    # and leave sshd unable to start.
+    validate: "{{ __run_sshd_sshd_exec_path }} -t -f %s"
   vars:
     # Pass (and/or adjust) variables needed for the template
     tpl_settings: "{{ __run_sshd_effective_sshd_settings }}"

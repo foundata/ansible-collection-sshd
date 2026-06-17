@@ -1,0 +1,8 @@
+---
+
+bugfixes:
+  - >
+    ``run`` role - The managed sshd drop-in config file is now validated with
+    ``sshd -t`` before it is written (``validate:`` on the template task), so an
+    invalid ``run_sshd_service_settings`` value can no longer reach the restart
+    handler and leave sshd unable to start.

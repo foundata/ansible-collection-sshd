@@ -31,7 +31,24 @@ It provides resources to manage and use the [OpenSSH](https://www.openssh.com/) 
 
 ### Role: `foundata.sshd.run`
 
-The primary resource in this collection to configure and maintain `sshd` with security best practices by default. See the [role's `README.md`](./roles/run/README.md) for more information and usage examples.
+The primary role in this collection to configure and maintain `sshd` with security best practices by default. [Its `README.md`](./roles/run/README.md) covers configuration, usage examples, and more:
+
+<!-- ANSIBLE DOCSMITH TOC-FULL run START -->
+- [Ansible role: `foundata.sshd.run`](roles/run/README.md#ansible-role-foundatasshdrun)
+  - [Table of contents](roles/run/README.md#toc)
+  - [Features](roles/run/README.md#features)
+  - [Example playbooks, using this role](roles/run/README.md#examples)
+  - [Supported tags](roles/run/README.md#tags)
+  - [Role variables](roles/run/README.md#variables)
+    - [`run_sshd_state`](roles/run/README.md#variable-run_sshd_state)
+    - [`run_sshd_autoupgrade`](roles/run/README.md#variable-run_sshd_autoupgrade)
+    - [`run_sshd_service_state`](roles/run/README.md#variable-run_sshd_service_state)
+    - [`run_sshd_service_settings`](roles/run/README.md#variable-run_sshd_service_settings)
+    - [`run_sshd_config_service_dropin_file_name`](roles/run/README.md#variable-run_sshd_config_service_dropin_file_name)
+  - [Dependencies](roles/run/README.md#dependencies)
+  - [Compatibility](roles/run/README.md#compatibility)
+  - [External requirements](roles/run/README.md#requirements)
+<!-- ANSIBLE DOCSMITH TOC-FULL run END -->
 
 
 

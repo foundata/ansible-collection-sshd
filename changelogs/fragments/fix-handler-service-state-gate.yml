@@ -1,0 +1,10 @@
+---
+
+bugfixes:
+  - >
+    ``run`` role - The service restart handler was gated only on
+    ``run_sshd_service_state != 'unmanaged'``. With ``run_sshd_service_state: "disabled"`` a
+    configuration change still notified them and, because handlers run after the
+    service management tasks, the restart started the just-stopped unit again,
+    leaving a running service although the declared state is stopped. The
+    handlers are now gated on ``run_sshd_service_state in ['enabled', 'running']``.

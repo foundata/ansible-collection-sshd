@@ -7,6 +7,6 @@
     name: "{{ __run_sshd_sshd_servicename }}"
     state: "restarted"
   when:
-    - run_sshd_service_state != 'unmanaged'
+    - run_sshd_service_state in ['enabled', 'running']
   listen:
     - "run_sshd: restart sshd.service"

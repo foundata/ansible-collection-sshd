@@ -1,0 +1,14 @@
+---
+
+minor_changes:
+  - >
+    ``run`` role - Added an access-preservation preflight (anti-lockout) that
+    runs before the SSH daemon is restarted. It evaluates the effective
+    configuration for the Ansible connection account using ``sshd -T`` (extended
+    test mode, including resolved ``Match`` blocks) and aborts the run *before*
+    the restart handler fires if that account would be locked out, for example
+    by a restrictive ``AllowUsers``, ``AllowGroups``, ``DenyUsers``,
+    ``DenyGroups``, ``PermitRootLogin no`` (when connecting as ``root``), or by
+    disabling every authentication method. Syntax validation (``sshd -t``) alone
+    could not catch these lockouts. The new ``run_sshd_config_access_check``
+    variable (default ``true``) can be set to ``false`` to bypass the safeguard.

@@ -15,6 +15,7 @@ The `foundata.sshd.run` Ansible role (part of the `foundata.sshd` Ansible collec
   - [`run_sshd_service_state`](#variable-run_sshd_service_state)
   - [`run_sshd_service_settings`](#variable-run_sshd_service_settings)
   - [`run_sshd_config_service_dropin_file_name`](#variable-run_sshd_config_service_dropin_file_name)
+  - [`run_sshd_config_access_check`](#variable-run_sshd_config_access_check)
 <!-- ANSIBLE DOCSMITH TOC END -->
 - [Dependencies](#dependencies)
 - [Compatibility](#compatibility)
@@ -33,6 +34,7 @@ Main features:
   * Disabled Kerberos and GSSAPI (easy to re-enable but quite often not needed *by default*).
   * See `__run_sshd_service_settings_defaults` in  `./vars/main.yml` for a complete list.
 * Default configuration result passes [`ssh-audit`](https://github.com/jtesta/ssh-audit) without errors or warnings.
+* Access-preservation preflight (anti-lockout): the role aborts before restarting `sshd` if the effective configuration would lock the Ansible connection account out (see `run_sshd_config_access_check`).
 * Simple to use: extend or adapt / overwrite the role's default configuration with a simple dictionary.
 
 
@@ -124,6 +126,7 @@ The following variables can be configured for this role:
 | `run_sshd_service_state` | `str` | No | `"enabled"` | Defines the status of the service(s).<br><br>`enabled`: Service is running and will start automatically at boot.<br><br>`disabled`: Service is stopped and will not start automatically at boot.<br><br>`running` Service is running but will not start […](#variable-run_sshd_service_state) |
 | `run_sshd_service_settings` | `dict` | No | `{}` | sshd service configuration values (additional ones or to overwrite defaults; see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special […](#variable-run_sshd_service_settings) |
 | `run_sshd_config_service_dropin_file_name` | `str` | No | `"00-managed.conf"` | Filename of the drop-in configuration file to be placed in `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix ensures early loading and thus higher precedence over files with higher-numbered prefixes.<br><br>If a non-default […](#variable-run_sshd_config_service_dropin_file_name) |
+| `run_sshd_config_access_check` | `bool` | No | `true` | If set to `true` (the default), the role runs an access-preservation preflight (anti-lockout) before restarting the SSH daemon. It evaluates the effective configuration (via `sshd -T`, including resolved `Match` blocks) for the account Ansible is […](#variable-run_sshd_config_access_check) |
 
 ### `run_sshd_state`<a id="variable-run_sshd_state"></a>
 
@@ -135,7 +138,7 @@ Determines whether the managed resources should be `present` or `absent`.
 installed and configured.
 
 `absent` reverts changes as much as possible, such as removing packages,
-deleting created users, stopping services, restoring modified settings, …
+deleting created users, stopping services, restoring modified settings, ...
 
 - **Type**: `str`
 - **Required**: No
@@ -228,6 +231,35 @@ removed automatically to prevent conflicts.
 - **Type**: `str`
 - **Required**: No
 - **Default**: `"00-managed.conf"`
+
+
+
+### `run_sshd_config_access_check`<a id="variable-run_sshd_config_access_check"></a>
+
+[*⇑ Back to ToC ⇑*](#toc)
+
+If set to `true` (the default), the role runs an access-preservation
+preflight (anti-lockout) before restarting the SSH daemon. It evaluates
+the effective configuration (via `sshd -T`, including resolved `Match`
+blocks) for the account Ansible is connected with and aborts the run
+*before* the restart handler fires if that account would be locked out,
+for example by a restrictive `AllowUsers`, `AllowGroups`, `DenyUsers`,
+`DenyGroups`, `PermitRootLogin no` (when connecting as `root`), or by
+disabling every authentication method.
+
+This guards against the common footgun of applying a syntactically valid
+but too restrictive policy that locks you out on the next login. Set it to
+`false` to bypass the safeguard (only advisable if you are certain you
+retain another way to access the host, e.g. a console).
+
+Note: source-address-based `Match Address`/`Match Host` blocks are
+evaluated against `localhost`/`127.0.0.1` (the connecting client address
+is not known to the role), and only the common access-list glob semantics
+(`*`, `?`, `!`, `user@host`) are honored.
+
+- **Type**: `bool`
+- **Required**: No
+- **Default**: `true`
 
 
 

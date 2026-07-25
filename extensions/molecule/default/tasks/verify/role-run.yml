@@ -572,3 +572,44 @@
     }}
   loop_control:
     label: "{{ item['path'] }}"
+
+
+## Access-preservation preflight (negative test)
+#
+# Re-run the role with an AllowUsers value that excludes the Ansible connection
+# account and assert that run_sshd_config_access_check aborts the run at the
+# preflight (before the restart handler fires) instead of applying a policy that
+# would lock the account out. The rescue restores a valid configuration so the
+# final on-disk state and the end-of-play restart handler stay valid.
+
+- name: "Molecule | Verify | Access preflight negative test"
+  block:
+
+    - name: "Molecule | Verify | Apply a config that excludes the connection account (must abort)"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+      vars:
+        run_sshd_service_settings:
+          AllowUsers: "user-that-cannot-log-in"
+
+    - name: "Molecule | Verify | Fail the test because the preflight did NOT abort the run"
+      ansible.builtin.fail:
+        msg: >-
+          The access preflight did not abort the run even though AllowUsers excludes the
+          Ansible connection account. run_sshd_config_access_check is not protecting logins.
+
+  rescue:
+
+    - name: "Molecule | Verify | Assert the run aborted at the access preflight"
+      ansible.builtin.assert:
+        that:
+          - (ansible_failed_task['name'] | ansible.builtin.default('')) is ansible.builtin.search('Access preflight')
+          - (ansible_failed_task['name'] | ansible.builtin.default('')) is ansible.builtin.search('lock the connection account out')
+        fail_msg: >-
+          The role failed, but not at the access preflight assert as expected
+          (failed task: '{{ ansible_failed_task['name'] | ansible.builtin.default('unknown') }}').
+        success_msg: "Access preflight correctly aborted the run for an AllowUsers value that excludes the connection account."
+
+    - name: "Molecule | Verify | Restore a valid configuration after the negative test"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"

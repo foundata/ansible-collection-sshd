@@ -45,6 +45,7 @@ The primary role in this collection to configure and maintain `sshd` with securi
     - [`run_sshd_service_state`](roles/run/README.md#variable-run_sshd_service_state)
     - [`run_sshd_service_settings`](roles/run/README.md#variable-run_sshd_service_settings)
     - [`run_sshd_config_service_dropin_file_name`](roles/run/README.md#variable-run_sshd_config_service_dropin_file_name)
+    - [`run_sshd_config_access_check`](roles/run/README.md#variable-run_sshd_config_access_check)
   - [Dependencies](roles/run/README.md#dependencies)
   - [Compatibility](roles/run/README.md#compatibility)
   - [External requirements](roles/run/README.md#requirements)

@@ -20,7 +20,7 @@ argument_specs:
           installed and configured.
 
           `absent` reverts changes as much as possible, such as removing packages,
-          deleting created users, stopping services, restoring modified settings, …
+          deleting created users, stopping services, restoring modified settings, ...
         type: "str"
         default: "present"
         choices:
@@ -94,3 +94,27 @@ argument_specs:
         type: "str"
         default: "00-managed.conf"
         version_added: "1.4.0"
+
+      run_sshd_config_access_check:
+        description: |
+          If set to `true` (the default), the role runs an access-preservation
+          preflight (anti-lockout) before restarting the SSH daemon. It evaluates
+          the effective configuration (via `sshd -T`, including resolved `Match`
+          blocks) for the account Ansible is connected with and aborts the run
+          *before* the restart handler fires if that account would be locked out,
+          for example by a restrictive `AllowUsers`, `AllowGroups`, `DenyUsers`,
+          `DenyGroups`, `PermitRootLogin no` (when connecting as `root`), or by
+          disabling every authentication method.
+
+          This guards against the common footgun of applying a syntactically valid
+          but too restrictive policy that locks you out on the next login. Set it to
+          `false` to bypass the safeguard (only advisable if you are certain you
+          retain another way to access the host, e.g. a console).
+
+          Note: source-address-based `Match Address`/`Match Host` blocks are
+          evaluated against `localhost`/`127.0.0.1` (the connecting client address
+          is not known to the role), and only the common access-list glob semantics
+          (`*`, `?`, `!`, `user@host`) are honored.
+        type: "bool"
+        default: true
+        version_added: "2.1.0"

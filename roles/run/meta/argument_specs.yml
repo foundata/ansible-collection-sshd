@@ -117,4 +117,4 @@ argument_specs:
           (`*`, `?`, `!`, `user@host`) are honored.
         type: "bool"
         default: true
-        version_added: "2.1.0"
+        version_added: "3.0.0"

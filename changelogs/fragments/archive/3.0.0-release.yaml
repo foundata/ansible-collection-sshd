@@ -1,0 +1,22 @@
+---
+
+release_summary: |
+  Release Date: 2026-07-25
+
+  Feature release, but it includes potentially breaking changes, so this is a
+  major version bump according to SemVer. Both of them harden the defaults of
+  ``foundata.sshd.run`` and can affect working setups:
+
+  1. The SSH daemon now offers a hybrid post-quantum key exchange only.
+     **Clients older than OpenSSH 8.5** (such as Debian 11, Ubuntu 20.04, RHEL 8
+     or macOS up to and including 12) **can no longer connect, so verify your
+     clients before upgrading** or re-add a classical key exchange through
+     ``run_sshd_service_settings``. In exchange, the default configuration
+     passes ``ssh-audit`` without warnings again.
+  2. A new access-preservation preflight (anti-lockout) aborts the run *before*
+     the SSH daemon is restarted if the effective configuration would lock the
+     Ansible connection account out of SSH. Playbooks that deliberately exclude
+     that account from SSH access now fail until they set
+     ``run_sshd_config_access_check: false``.
+
+  See the changelog and/or commit messages for implementation details.

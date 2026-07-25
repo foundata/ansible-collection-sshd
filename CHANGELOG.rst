@@ -4,6 +4,55 @@ foundata.sshd Ansible collection Release Notes
 
 .. contents:: Topics
 
+v3.0.0
+======
+
+Release Summary
+---------------
+
+Release Date: 2026-07-25
+
+Feature release, but it includes potentially breaking changes, so this is a
+major version bump according to SemVer. Both of them harden the defaults of
+``foundata.sshd.run`` and can affect working setups:
+
+1. The SSH daemon now offers a hybrid post-quantum key exchange only.
+   **Clients older than OpenSSH 8.5** (such as Debian 11, Ubuntu 20.04, RHEL 8
+   or macOS up to and including 12) **can no longer connect, so verify your
+   clients before upgrading** or re-add a classical key exchange through
+   ``run_sshd_service_settings``. In exchange, the default configuration
+   passes ``ssh-audit`` without warnings again.
+2. A new access-preservation preflight (anti-lockout) aborts the run *before*
+   the SSH daemon is restarted if the effective configuration would lock the
+   Ansible connection account out of SSH. Playbooks that deliberately exclude
+   that account from SSH access now fail until they set
+   ``run_sshd_config_access_check: false``.
+
+See the changelog and/or commit messages for implementation details.
+
+Minor Changes
+-------------
+
+- ``run`` role - Added an access-preservation preflight (anti-lockout) that runs before the SSH daemon is restarted. It evaluates the effective configuration for the Ansible connection account using ``sshd -T`` (extended test mode, including resolved ``Match`` blocks) and aborts the run *before* the restart handler fires if that account would be locked out, for example by a restrictive ``AllowUsers``, ``AllowGroups``, ``DenyUsers``, ``DenyGroups``, ``PermitRootLogin no`` (when connecting as ``root``), or by disabling every authentication method. Syntax validation (``sshd -t``) alone could not catch these lockouts. The new ``run_sshd_config_access_check`` variable (default ``true``) can be set to ``false`` to bypass the safeguard.
+- ``run`` role - The default configuration passes `ssh-audit <https://github.com/jtesta/ssh-audit>`__ without warnings again. ssh-audit 3.9.0 flags every classical-only key exchange with "does not provide protection against post-quantum attacks", which the previous default triggered. ``sntrup761x25519-sha512@openssh.com`` was chosen over ``mlkem768x25519-sha256`` (NIST FIPS 203) because it is available on every platform supported by this role (OpenSSH 8.5 and later), whereas ``mlkem768x25519-sha256`` requires OpenSSH 9.9 and is therefore missing on Debian 12, Ubuntu 22.04 and Ubuntu 24.04.
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- ``run`` role - Because the SSH daemon now only offers a post-quantum key exchange, **clients older than OpenSSH 8.5 can no longer connect** (for example Debian 11, Ubuntu 20.04, RHEL 8 or macOS up to and including 12). Verify your clients before upgrading. To keep a classical key exchange available as a fallback, override the default, keeping in mind that this re-introduces the "harvest now, decrypt later" exposure:
+  .. code-block:: yaml
+
+      run_sshd_service_settings:
+        KexAlgorithms: "sntrup761x25519-sha512@openssh.com,curve25519-sha256"
+- ``run`` role - The default ``KexAlgorithms`` changed from ``curve25519-sha256@libssh.org`` to the hybrid post-quantum ``sntrup761x25519-sha512@openssh.com``. Classical X25519/ECDH key exchange offers no protection against "harvest now, decrypt later" attacks: an adversary can record a handshake today and recover the session key once a quantum computer can run Shor's algorithm against the X25519 ECDH. ``sntrup761x25519-sha512@openssh.com`` combines the NTRU Prime KEM *with* X25519, so the session key stays secure unless both are broken. Note that this is not about the ``@libssh.org`` vendor alias: the standardized name ``curve25519-sha256`` denotes the same algorithm and is equally affected.
+
+Bugfixes
+--------
+
+- The comment written into neutralized distribution config files contained a stray double quote in the Debian hint (``dpkg -S '<file>'"``), so the suggested command could not be copied and pasted as-is. The quote is removed.
+- ``run`` role - The managed sshd drop-in config file is now validated with ``sshd -t`` before it is written (``validate:`` on the template task), so an invalid ``run_sshd_service_settings`` value can no longer reach the restart handler and leave sshd unable to start.
+- ``run`` role - The service restart handler was gated only on ``run_sshd_service_state != 'unmanaged'``. With ``run_sshd_service_state: "disabled"`` a configuration change still notified them and, because handlers run after the service management tasks, the restart started the just-stopped unit again, leaving a running service although the declared state is stopped. The handlers are now gated on ``run_sshd_service_state in ['enabled', 'running']``.
+
 v2.0.0
 ======
 

@@ -53,10 +53,10 @@
     __run_sshd_matched_versions: >-
       {{
         __run_sshd_supported_platforms
-        | ansible.builtin.selectattr('name', 'match', __run_sshd_platform_names_regex, ignorecase=true)
+        | ansible.builtin.selectattr('name', 'ansible.builtin.match', __run_sshd_platform_names_regex, ignorecase=true)
         | ansible.builtin.map(attribute='versions')
         | ansible.builtin.flatten
-        | ansible.builtin.select('match', __run_sshd_platform_versions_regex, ignorecase=true)
+        | ansible.builtin.select('ansible.builtin.match', __run_sshd_platform_versions_regex, ignorecase=true)
         | ansible.builtin.list
       }}
   when:
@@ -148,12 +148,16 @@
       {{
         __run_sshd_service_settings_defaults
         | ansible.builtin.dict2items
-        | ansible.builtin.rejectattr('key', 'match', '^(' ~ (run_sshd_service_settings.keys() | join('|')) ~ ')$', ignorecase=true)
-        | items2dict
+        | ansible.builtin.rejectattr(
+            'key', 'ansible.builtin.match',
+            '^(' ~ (run_sshd_service_settings.keys() | ansible.builtin.join('|')) ~ ')$',
+            ignorecase=true
+          )
+        | ansible.builtin.items2dict
         | ansible.builtin.combine(run_sshd_service_settings)
         | ansible.builtin.dict2items
-        | ansible.builtin.selectattr('value', 'ne', None)
-        | items2dict
+        | ansible.builtin.selectattr('value', 'ansible.builtin.ne', None)
+        | ansible.builtin.items2dict
       }}
 
 
@@ -163,12 +167,16 @@
       {{
         __run_sshd_effective_sshd_settings
         | ansible.builtin.dict2items
-        | ansible.builtin.rejectattr('key', 'match', '^(' ~ (__run_sshd_service_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
-        | items2dict
+        | ansible.builtin.rejectattr(
+            'key', 'ansible.builtin.match',
+            '^(' ~ (__run_sshd_service_settings_overwrite.keys() | ansible.builtin.join('|')) ~ ')$',
+            ignorecase=true
+          )
+        | ansible.builtin.items2dict
         | ansible.builtin.combine(__run_sshd_service_settings_overwrite)
         | ansible.builtin.dict2items
-        | ansible.builtin.selectattr('value', 'ne', None)
-        | items2dict
+        | ansible.builtin.selectattr('value', 'ansible.builtin.ne', None)
+        | ansible.builtin.items2dict
       }}
   when:
     - __run_sshd_service_settings_overwrite | ansible.builtin.length > 0
@@ -180,13 +188,17 @@
       {{
         run_sshd_service_settings.keys()
         | ansible.builtin.list
-        | ansible.builtin.select('match', '^(' ~ (__run_sshd_service_settings_overwrite.keys() | join('|')) ~ ')$', ignorecase=true)
+        | ansible.builtin.select(
+            'ansible.builtin.match',
+            '^(' ~ (__run_sshd_service_settings_overwrite.keys() | ansible.builtin.join('|')) ~ ')$',
+            ignorecase=true
+          )
         | ansible.builtin.list
       }}
   ansible.builtin.debug:
     msg: >-
       The following sshd settings from 'run_sshd_service_settings' are being
-      overwritten by OS-specific constraints: {{ __run_sshd_overwritten_keys | join(', ') }}.
+      overwritten by OS-specific constraints: {{ __run_sshd_overwritten_keys | ansible.builtin.join(', ') }}.
       This is typically due to the sshd build on this platform not supporting these options.
     verbosity: 3
   when:

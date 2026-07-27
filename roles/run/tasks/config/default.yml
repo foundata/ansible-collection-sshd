@@ -147,13 +147,13 @@
       {%- set options = [] -%}
       {%- for file_content in (__run_sshd_slurp_sshd_configd_result['results']
                                | ansible.builtin.map(attribute='content')
-                               | ansible.builtin.map('b64decode')
+                               | ansible.builtin.map('ansible.builtin.b64decode')
                                | ansible.builtin.list) -%}
         {%- for line in file_content.splitlines() -%}
           {%- if line | ansible.builtin.regex_search('^[^#].+$', multiline=false, ignorecase=true) -%}
             {%- set ssh_option_name = line | ansible.builtin.regex_replace('\s+', ' ') | ansible.builtin.trim -%}
             {%- if ssh_option_name | ansible.builtin.regex_search('^Subsystem[\t ]+', multiline=false, ignorecase=true) -%}
-              {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0:2] | join('[\\t ]+') -%}
+              {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0:2] | ansible.builtin.join('[\\t ]+') -%}
             {%- else -%}
               {%- set ssh_option_name = (ssh_option_name | ansible.builtin.split(' '))[0] -%}
             {%- endif -%}
@@ -204,7 +204,7 @@
   ansible.builtin.replace:
     path: "{{ __run_sshd_config_service_file_path }}"
     # Notes on the regex:
-    # - {{ __run_sshd_dropin_options | join('|') }} will result in something like
+    # - {{ __run_sshd_dropin_options | ansible.builtin.join('|') }} will result in something like
     #   HostKey|LogLevel|LoginGraceTime| [...] |Subsystem[\\t ]+sftp|KexAlgorithms\
     # - Include has to be excluded from commenting as it can exists multiple times.
     # - When options are joined with '|', an empty (whitespace-only) option would
@@ -215,7 +215,7 @@
     # - (?=[\t ]|$) is a safeguard to prevent partial option matches (e.g., 'Foo'
     #   accidentally matching 'FooBar' if such a token appeared).
     regexp: >-
-      ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_dropin_options | ansible.builtin.select | join('|') }})(?=[\t ]|$)(.*)
+      ^(?![\t ]*#)([\t ]*)(?!Include)({{ __run_sshd_dropin_options | ansible.builtin.select | ansible.builtin.join('|') }})(?=[\t ]|$)(.*)
     replace: '#\1\2\3'
     validate: "{{ __run_sshd_sshd_exec_path }} -t -f %s"
   notify: "run_sshd: restart sshd.service"
@@ -303,18 +303,18 @@
           {#- on the user/group token only, see the block comment above). -#}
           {%- macro globs2re(plist) -%}
           {{- plist
-              | map('regex_replace', '@.*$', '')
-              | map('regex_escape')
-              | map('replace', '\\*', '.*')
-              | map('replace', '\\?', '.')
-              | join('|') -}}
+              | ansible.builtin.map('ansible.builtin.regex_replace', '@.*$', '')
+              | ansible.builtin.map('ansible.builtin.regex_escape')
+              | ansible.builtin.map('ansible.builtin.replace', '\\*', '.*')
+              | ansible.builtin.map('ansible.builtin.replace', '\\?', '.')
+              | ansible.builtin.join('|') -}}
           {%- endmacro -%}
           {%- macro matches(name, plist) -%}
-          {%-   set pos = plist | reject('match', '^!') | list -%}
-          {%-   set neg = plist | select('match', '^!')
-                  | map('regex_replace', '^!', '') | list -%}
-          {%-   set hitpos = (pos | length) > 0 and (name is ansible.builtin.regex('^(' ~ globs2re(pos) ~ ')$')) -%}
-          {%-   set hitneg = (neg | length) > 0 and (name is ansible.builtin.regex('^(' ~ globs2re(neg) ~ ')$')) -%}
+          {%-   set pos = plist | ansible.builtin.reject('ansible.builtin.match', '^!') | ansible.builtin.list -%}
+          {%-   set neg = plist | ansible.builtin.select('ansible.builtin.match', '^!')
+                  | ansible.builtin.map('ansible.builtin.regex_replace', '^!', '') | ansible.builtin.list -%}
+          {%-   set hitpos = (pos | ansible.builtin.length) > 0 and (name is ansible.builtin.regex('^(' ~ globs2re(pos) ~ ')$')) -%}
+          {%-   set hitneg = (neg | ansible.builtin.length) > 0 and (name is ansible.builtin.regex('^(' ~ globs2re(neg) ~ ')$')) -%}
           {{- 'yes' if (hitpos and not hitneg) else 'no' -}}
           {%- endmacro -%}
           {%- set user = __run_sshd_preflight_conn_user_raw['stdout'] | ansible.builtin.trim -%}
@@ -324,39 +324,39 @@
           {%-   set _ = ns.reasons.append(
                   'the effective configuration could not be evaluated with "sshd -T" (rc='
                   ~ __run_sshd_preflight_sshdt['rc'] ~ '): '
-                  ~ (__run_sshd_preflight_sshdt['stderr'] | ansible.builtin.trim | truncate(200))) -%}
+                  ~ (__run_sshd_preflight_sshdt['stderr'] | ansible.builtin.trim | ansible.builtin.truncate(200))) -%}
           {%- else -%}
           {%-   for line in __run_sshd_preflight_sshdt['stdout_lines'] -%}
           {%-     set p = line.split() -%}
-          {%-     if (p | length) >= 2 -%}
-          {%-       set k = p[0] | lower -%}
+          {%-     if (p | ansible.builtin.length) >= 2 -%}
+          {%-       set k = p[0] | ansible.builtin.lower -%}
           {%-       if k == 'allowusers' -%}{%- set ns.au = ns.au + p[1:] -%}
           {%-       elif k == 'denyusers' -%}{%- set ns.du = ns.du + p[1:] -%}
           {%-       elif k == 'allowgroups' -%}{%- set ns.ag = ns.ag + p[1:] -%}
           {%-       elif k == 'denygroups' -%}{%- set ns.dg = ns.dg + p[1:] -%}
-          {%-       elif k == 'permitrootlogin' -%}{%- set ns.proot = p[1] | lower -%}
-          {%-       elif k == 'pubkeyauthentication' -%}{%- set ns.pk = p[1] | lower -%}
-          {%-       elif k == 'passwordauthentication' -%}{%- set ns.pw = p[1] | lower -%}
-          {%-       elif k == 'kbdinteractiveauthentication' -%}{%- set ns.kbd = p[1] | lower -%}
-          {%-       elif k == 'gssapiauthentication' -%}{%- set ns.gss = p[1] | lower -%}
+          {%-       elif k == 'permitrootlogin' -%}{%- set ns.proot = p[1] | ansible.builtin.lower -%}
+          {%-       elif k == 'pubkeyauthentication' -%}{%- set ns.pk = p[1] | ansible.builtin.lower -%}
+          {%-       elif k == 'passwordauthentication' -%}{%- set ns.pw = p[1] | ansible.builtin.lower -%}
+          {%-       elif k == 'kbdinteractiveauthentication' -%}{%- set ns.kbd = p[1] | ansible.builtin.lower -%}
+          {%-       elif k == 'gssapiauthentication' -%}{%- set ns.gss = p[1] | ansible.builtin.lower -%}
           {%-       endif -%}
           {%-     endif -%}
           {%-   endfor -%}
           {#- Access lists, in sshd's evaluation order. -#}
-          {%-   if (matches(user, ns.du) | trim) == 'yes' -%}
+          {%-   if (matches(user, ns.du) | ansible.builtin.trim) == 'yes' -%}
           {%-     set _ = ns.reasons.append('DenyUsers matches the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
-          {%-   if (ns.au | length) > 0 and (matches(user, ns.au) | trim) == 'no' -%}
+          {%-   if (ns.au | ansible.builtin.length) > 0 and (matches(user, ns.au) | ansible.builtin.trim) == 'no' -%}
           {%-     set _ = ns.reasons.append('AllowUsers does not include the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
           {%-   set ns.ghit = false -%}
-          {%-   for g in groups -%}{%- if (matches(g, ns.dg) | trim) == 'yes' -%}{%- set ns.ghit = true -%}{%- endif -%}{%- endfor -%}
+          {%-   for g in groups -%}{%- if (matches(g, ns.dg) | ansible.builtin.trim) == 'yes' -%}{%- set ns.ghit = true -%}{%- endif -%}{%- endfor -%}
           {%-   if ns.ghit -%}
           {%-     set _ = ns.reasons.append('DenyGroups matches a group of the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
           {%-   set ns.ghit = false -%}
-          {%-   for g in groups -%}{%- if (matches(g, ns.ag) | trim) == 'yes' -%}{%- set ns.ghit = true -%}{%- endif -%}{%- endfor -%}
-          {%-   if (ns.ag | length) > 0 and not ns.ghit -%}
+          {%-   for g in groups -%}{%- if (matches(g, ns.ag) | ansible.builtin.trim) == 'yes' -%}{%- set ns.ghit = true -%}{%- endif -%}{%- endfor -%}
+          {%-   if (ns.ag | ansible.builtin.length) > 0 and not ns.ghit -%}
           {%-     set _ = ns.reasons.append('AllowGroups does not include any group of the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
           {#- PermitRootLogin and authentication-method survival. -#}
@@ -377,7 +377,7 @@
         fail_msg: >-
           Refusing to apply the sshd configuration: the effective policy would lock the
           Ansible connection account '{{ __run_sshd_preflight_conn_user_raw['stdout'] | ansible.builtin.trim }}'
-          out of SSH ({{ __run_sshd_preflight_lockout_reasons | join('; ') }}). Fix
+          out of SSH ({{ __run_sshd_preflight_lockout_reasons | ansible.builtin.join('; ') }}). Fix
           'run_sshd_service_settings', or set 'run_sshd_config_access_check: false' to bypass
           this safeguard (only if you are certain you retain another way to access the host).
         success_msg: >-

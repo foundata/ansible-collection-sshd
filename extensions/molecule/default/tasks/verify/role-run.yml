@@ -14,9 +14,9 @@
     "{{ item['key'] }}": "{{ item['value'] }}"
   loop: >-
     {{
-      (__testing_state | default({}, true))
+      (__testing_state | ansible.builtin.default({}, true))
       | ansible.builtin.dict2items
-      | ansible.builtin.selectattr('key', 'match', '^(run_sshd_|__testing_)')
+      | ansible.builtin.selectattr('key', 'ansible.builtin.match', '^(run_sshd_|__testing_)')
       | ansible.builtin.list
     }}
 
@@ -28,7 +28,7 @@
     __testing_journalctl_executable: >-
       {{
         '/bin/journalctl'
-        if (ansible_facts['distribution'] == 'Debian' and (ansible_facts['distribution_major_version'] | int == 11))
+        if (ansible_facts['distribution'] == 'Debian' and (ansible_facts['distribution_major_version'] | ansible.builtin.int == 11))
         else '/usr/bin/journalctl'
       }}
 
@@ -165,7 +165,7 @@
   ansible.builtin.set_fact:
     __testing_configured_ssh_port: >-
       {{
-        __run_sshd_effective_sshd_settings['Port'] | ansible.builtin.default(22) | int
+        __run_sshd_effective_sshd_settings['Port'] | ansible.builtin.default(22) | ansible.builtin.int
         if (__run_sshd_effective_sshd_settings is ansible.builtin.defined and
             __run_sshd_effective_sshd_settings['Port'] is ansible.builtin.defined)
         else 22
@@ -200,7 +200,7 @@
 
 - name: "Molecule | Verify | Run ssh-audit against localhost on configured port"
   ansible.builtin.shell: |-
-    ssh-audit localhost:{{ __testing_configured_ssh_port | int }} -jj > /tmp/ssh-audit-result.json
+    ssh-audit localhost:{{ __testing_configured_ssh_port | ansible.builtin.int }} -jj > /tmp/ssh-audit-result.json
   args:
     executable: "/bin/bash"
   register: __testing_ssh_audit_run
@@ -278,7 +278,7 @@
   loop: >-
     {{
       __run_sshd_service_settings_overwrite | ansible.builtin.dict2items
-      | ansible.builtin.selectattr('value', 'in', [none, ''])
+      | ansible.builtin.selectattr('value', 'ansible.builtin.in', [none, ''])
       | ansible.builtin.map(attribute='key') | ansible.builtin.list
     }}
   when:
@@ -300,7 +300,7 @@
   loop: >-
     {{
       __run_sshd_service_settings_overwrite | ansible.builtin.dict2items
-      | ansible.builtin.rejectattr('value', 'in', [none, ''])
+      | ansible.builtin.rejectattr('value', 'ansible.builtin.in', [none, ''])
       | ansible.builtin.list
     }}
   when:
@@ -566,8 +566,8 @@
   loop: >-
     {{
       __testing_permissions
-      | ansible.builtin.selectattr('expected_mode_os', 'defined')
-      | ansible.builtin.rejectattr('expected_mode_os', 'none')
+      | ansible.builtin.selectattr('expected_mode_os', 'ansible.builtin.defined')
+      | ansible.builtin.rejectattr('expected_mode_os', 'ansible.builtin.none')
       | ansible.builtin.list
     }}
   loop_control:

@@ -19,11 +19,11 @@
 # {{ ansible_managed }}
 
 {% for key, value in tpl_settings.items() %}
-{%   if value is sameas true %}
+{%   if value is ansible.builtin.sameas(true) %}
 {{ key }} yes
-{%   elif value is sameas false %}
+{%   elif value is ansible.builtin.sameas(false) %}
 {{ key }} no
-{%   elif value is iterable and value is not string %}
+{%   elif value is ansible.builtin.iterable and value is not ansible.builtin.string %}
 {%     for item in value %}
 {{ key }} {{ item }}
 {%     endfor %}

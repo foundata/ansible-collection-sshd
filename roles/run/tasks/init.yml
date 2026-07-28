@@ -131,6 +131,25 @@
 ### SSHD specific
 
 
+# The drop-in filename gets concatenated into a path below
+# /etc/ssh/sshd_config.d. A value containing a path separator or leading dots
+# (such as '../sshd_config') would make the role write to or remove files
+# outside of that directory with root privileges. The stock configuration also
+# only includes files ending in '.conf', so any other suffix would silently
+# never be applied by sshd.
+- name: "Init | Assert the drop-in filename is a safe basename ending in '.conf'"
+  ansible.builtin.assert:
+    that:
+      - run_sshd_config_service_dropin_file_name is ansible.builtin.match('^[A-Za-z0-9][A-Za-z0-9._-]*\.conf$')
+    fail_msg: >-
+      'run_sshd_config_service_dropin_file_name' ({{ run_sshd_config_service_dropin_file_name }})
+      has to be a plain filename ending in '.conf', starting with an alphanumeric
+      character and containing only characters from 'A-Za-z0-9._-' (no path
+      separators).
+    success_msg: >-
+      'run_sshd_config_service_dropin_file_name' is a safe basename.
+
+
 # Regarding the merge logic in the following two tasks:
 #
 # - A simple dict_a | ansible.builtin.combine(dict_b) is not sufficient when

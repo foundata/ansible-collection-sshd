@@ -1,0 +1,10 @@
+---
+
+security_fixes:
+  - >
+    ``run`` role - ``run_sshd_config_service_dropin_file_name`` is now validated
+    to be a plain filename ending in ``.conf``. A value containing path
+    separators (such as ``../sshd_config``) could previously make the role
+    write to or remove files outside of ``/etc/ssh/sshd_config.d/`` with root
+    privileges, and any suffix other than ``.conf`` is silently ignored by the
+    stock ``sshd_config`` include directive.

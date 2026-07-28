@@ -228,6 +228,11 @@ If a non-default filename is used, any existing
 `/etc/ssh/sshd_config.d/00-managed.conf` from previous Ansible runs will be
 removed automatically to prevent conflicts.
 
+Has to be a plain filename ending in `.conf` (the stock configuration only
+includes `sshd_config.d/*.conf`), starting with an alphanumeric character
+and containing only characters from `A-Za-z0-9._-` (no path separators);
+the role fails during initialization otherwise.
+
 - **Type**: `str`
 - **Required**: No
 - **Default**: `"00-managed.conf"`

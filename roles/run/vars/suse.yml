@@ -8,7 +8,7 @@
 __run_sshd_packages_install:
   - "openssh-server"
 
-__run_sshd_packages_uninstall: "{{ run_sshd_packages_install }}"
+__run_sshd_packages_uninstall: "{{ __run_sshd_packages_install }}"
 
 __run_sshd_service_settings_overwrite:
   # Remove 'PrintLastLog' for SUSE systems where openssh was built with --disable-lastlog

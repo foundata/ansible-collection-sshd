@@ -1,0 +1,8 @@
+---
+
+bugfixes:
+  - >
+    ``run`` role - ``state: absent`` now removes the OpenSSH server package on
+    SUSE platforms. A variable name typo (``run_sshd_packages_install``
+    instead of ``__run_sshd_packages_install``) left the uninstall package
+    list undefined there, so the package removal was silently skipped.

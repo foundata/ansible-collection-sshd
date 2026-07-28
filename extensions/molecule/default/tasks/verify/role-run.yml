@@ -613,3 +613,57 @@
     - name: "Molecule | Verify | Restore a valid configuration after the negative test"
       ansible.builtin.include_role:
         name: "foundata.sshd.run"
+
+
+## Uninstall (state "absent") verification
+#
+# This block stays the LAST one in the verify stage: it converges the
+# instances away from the state every earlier check relies on. It is
+# deliberately not part of the cleanup stage - cleanup also runs when an
+# earlier stage fails (on arbitrary state) and has to stay assertion-free.
+# Removing openssh-server inside the instances is safe: Molecule's Podman
+# driver connects via "podman exec", not SSH.
+
+# Earlier verify steps (e.g. the restored configuration after the negative
+# access-preflight test) notified restart handlers. Run them now against the
+# still-installed service - deferred to the end of the play they would fire
+# after the uninstall has removed the unit.
+- name: "Molecule | Verify | Uninstall: run the pending notified handlers first"
+  ansible.builtin.meta: "flush_handlers"
+
+
+- name: "Molecule | Verify | Uninstall: record the host key state before the uninstall"
+  ansible.builtin.stat:
+    path: "/etc/ssh/ssh_host_ed25519_key"
+  register: __testing_uninstall_hostkey_before
+
+
+- name: "Molecule | Verify | Uninstall: run the role with state 'absent'"
+  ansible.builtin.include_role:
+    name: "foundata.sshd.run"
+  vars:
+    run_sshd_state: "absent"
+    run_sshd_config_service_dropin_file_name: "00-custom-dropin.conf"
+
+
+- name: "Molecule | Verify | Uninstall: check the role-managed files and the server are gone"
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: __testing_uninstall_gone_stat
+  failed_when:
+    - __testing_uninstall_gone_stat['stat']['exists']
+  loop:
+    - "/etc/ssh/sshd_config.d/00-custom-dropin.conf"
+    - "/etc/ssh/sshd_config.d/00-managed.conf"
+    - "/usr/sbin/sshd"
+
+
+# Host keys are not owned by the packages (they are generated on the host)
+# and identify the machine: a package uninstall must never delete them.
+- name: "Molecule | Verify | Uninstall: check the host key survived the uninstall"
+  ansible.builtin.stat:
+    path: "/etc/ssh/ssh_host_ed25519_key"
+  register: __testing_uninstall_hostkey_after
+  failed_when:
+    - __testing_uninstall_hostkey_after['stat']['exists']
+      != __testing_uninstall_hostkey_before['stat']['exists']

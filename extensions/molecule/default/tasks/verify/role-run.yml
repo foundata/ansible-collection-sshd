@@ -577,15 +577,19 @@
 ## Access-preservation preflight (negative test)
 #
 # Re-run the role with an AllowUsers value that excludes the Ansible connection
-# account and assert that run_sshd_config_access_check aborts the run at the
-# preflight (before the restart handler fires) instead of applying a policy that
-# would lock the account out. The rescue restores a valid configuration so the
-# final on-disk state and the end-of-play restart handler stay valid.
+# account. The role writes the restrictive configuration, but the access
+# preflight must abort before the queued restart handler normally runs. The
+# running daemon therefore retains its previous configuration under normal
+# Ansible handler semantics. The rescue restores valid on-disk configuration
+# before the play completes.
+#
+# This is a best-effort safeguard: force_handlers or --force-handlers can still
+# execute a queued restart after a task failure.
 
 - name: "Molecule | Verify | Access preflight negative test"
   block:
 
-    - name: "Molecule | Verify | Apply a config that excludes the connection account (must abort)"
+    - name: "Molecule | Verify | Write a restrictive config and expect the access preflight to abort"
       ansible.builtin.include_role:
         name: "foundata.sshd.run"
       vars:
@@ -595,8 +599,8 @@
     - name: "Molecule | Verify | Fail the test because the preflight did NOT abort the run"
       ansible.builtin.fail:
         msg: >-
-          The access preflight did not abort the run even though AllowUsers excludes the
-          Ansible connection account. run_sshd_config_access_check is not protecting logins.
+          The access preflight did not abort even though AllowUsers excludes the
+          Ansible connection account.
 
   rescue:
 
@@ -608,9 +612,136 @@
         fail_msg: >-
           The role failed, but not at the access preflight assert as expected
           (failed task: '{{ ansible_failed_task['name'] | ansible.builtin.default('unknown') }}').
-        success_msg: "Access preflight correctly aborted the run for an AllowUsers value that excludes the connection account."
+        success_msg: >-
+          The access preflight aborted after detecting that AllowUsers excludes the
+          Ansible connection account.
+
+    - name: "Molecule | Verify | Access preflight | Refresh service facts after rejection"
+      ansible.builtin.service_facts:
+
+    - name: "Molecule | Verify | Access preflight | Assert sshd remains running after rejection"
+      ansible.builtin.assert:
+        that:
+          - __run_sshd_sshd_servicename in ansible_facts['services']
+          - ansible_facts['services'][__run_sshd_sshd_servicename]['state'] == 'running'
+        fail_msg: >-
+          The sshd service is not running after the access preflight rejected the
+          restrictive configuration.
+        success_msg: >-
+          The sshd service remains running after the access preflight rejected the
+          restrictive configuration.
 
     - name: "Molecule | Verify | Restore a valid configuration after the negative test"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+
+
+## Access-preservation preflight (unsatisfiable AuthenticationMethods)
+#
+# An AuthenticationMethods value listing only alternatives whose methods are
+# disabled makes every login impossible. "sshd -t" already rejects globally
+# unsatisfiable values at validation time (the drop-in write fails, nothing
+# is applied), but it cannot evaluate Match-scoped ones: only the preflight's
+# effective-policy evaluation ("sshd -T -C") resolves the Match block and can
+# prove this lockout. Same best-effort contract as above.
+
+- name: "Molecule | Verify | Access preflight AuthenticationMethods negative test"
+  block:
+
+    - name: "Molecule | Verify | Write an unsatisfiable AuthenticationMethods config and expect the access preflight to abort"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+      vars:
+        # Dict order is deliberate: new keys render after the (merged) default
+        # settings, so "Match User root" starts a block and the
+        # AuthenticationMethods line below it is Match-scoped. The
+        # PasswordAuthentication override stays global (it replaces a default
+        # setting and keeps its position before the Match line).
+        run_sshd_service_settings:
+          PasswordAuthentication: "no"
+          Match: "User root"
+          AuthenticationMethods: "publickey,password"
+
+    - name: "Molecule | Verify | Fail the test because the preflight did NOT abort the run (AuthenticationMethods)"
+      ansible.builtin.fail:
+        msg: >-
+          The access preflight did not abort even though no AuthenticationMethods
+          alternative is satisfiable (publickey,password with PasswordAuthentication no).
+
+  rescue:
+
+    - name: "Molecule | Verify | Assert the run aborted at the access preflight because of AuthenticationMethods"
+      ansible.builtin.assert:
+        that:
+          - (ansible_failed_task['name'] | ansible.builtin.default('')) is ansible.builtin.search('Access preflight')
+          - (ansible_failed_result['msg'] | ansible.builtin.default('')) is ansible.builtin.search('AuthenticationMethods')
+        fail_msg: >-
+          The role failed, but not at the access preflight with an AuthenticationMethods
+          reason as expected (failed task:
+          '{{ ansible_failed_task['name'] | ansible.builtin.default('unknown') }}', message:
+          '{{ ansible_failed_result['msg'] | ansible.builtin.default('') | ansible.builtin.truncate(200) }}').
+        success_msg: >-
+          The access preflight aborted after detecting that no AuthenticationMethods
+          alternative is satisfiable.
+
+    - name: "Molecule | Verify | Restore a valid configuration after the AuthenticationMethods test"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+
+
+## Access-preservation preflight (user@host patterns against the SSH context)
+#
+# The preflight takes the client address from the session's SSH_CONNECTION
+# variable. Molecule connects via "podman exec" (no such variable), so a
+# synthetic one is injected: the preflight must approve an AllowUsers host part
+# matching the injected client address and abort on one that excludes it.
+
+- name: "Molecule | Verify | Access preflight approves a matching user@host AllowUsers pattern"
+  ansible.builtin.include_role:
+    name: "foundata.sshd.run"
+    apply:
+      environment:
+        SSH_CONNECTION: "192.0.2.10 51515 192.0.2.1 22"
+  vars:
+    run_sshd_service_settings:
+      AllowUsers: "root@192.0.2.*" # Molecule's Podman connection account is root
+
+
+- name: "Molecule | Verify | Access preflight user@host negative test"
+  block:
+
+    - name: "Molecule | Verify | Write an AllowUsers pattern excluding the client address and expect the access preflight to abort"
+      ansible.builtin.include_role:
+        name: "foundata.sshd.run"
+        apply:
+          environment:
+            SSH_CONNECTION: "192.0.2.10 51515 192.0.2.1 22"
+      vars:
+        run_sshd_service_settings:
+          AllowUsers: "root@203.0.113.99"
+
+    - name: "Molecule | Verify | Fail the test because the preflight did NOT abort the run (user@host)"
+      ansible.builtin.fail:
+        msg: >-
+          The access preflight did not abort even though the AllowUsers host part
+          excludes the (injected) client address.
+
+  rescue:
+
+    - name: "Molecule | Verify | Assert the run aborted at the access preflight because of the user@host pattern"
+      ansible.builtin.assert:
+        that:
+          - (ansible_failed_task['name'] | ansible.builtin.default('')) is ansible.builtin.search('Access preflight')
+          - (ansible_failed_result['msg'] | ansible.builtin.default('')) is ansible.builtin.search('AllowUsers')
+        fail_msg: >-
+          The role failed, but not at the access preflight with an AllowUsers reason
+          as expected (failed task:
+          '{{ ansible_failed_task['name'] | ansible.builtin.default('unknown') }}').
+        success_msg: >-
+          The access preflight aborted after detecting that the AllowUsers host part
+          excludes the client address.
+
+    - name: "Molecule | Verify | Restore a valid configuration after the user@host test"
       ansible.builtin.include_role:
         name: "foundata.sshd.run"
 

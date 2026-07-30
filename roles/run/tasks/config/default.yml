@@ -222,20 +222,32 @@
 
 
 # Access-preservation preflight (anti-lockout): A restrictive
-# AllowUsers/AllowGroups/DenyUsers/DenyGroups, a 'PermitRootLogin no' (when
-# connecting as root), a Match block, or disabling every authentication method
-# all pass syntax validation, reach the restart handler, and can lock the
-# connection out on the next login.
+# AllowUsers/AllowGroups/DenyUsers/DenyGroups, a 'PermitRootLogin' value the
+# connection cannot satisfy (when connecting as root), an unsatisfiable
+# AuthenticationMethods combination, a Match block, or disabling every
+# authentication method all pass syntax validation, reach the restart handler,
+# and can lock the connection out on the next login.
+#
+# Contract (best effort): the drop-in is already written to disk at this point
+# and is NOT rolled back on failure. Aborting prevents the queued restart
+# handler under normal Ansible failure semantics, so the running daemon keeps
+# its previous configuration; a later manual restart or reboot would apply the
+# restrictive file. force_handlers (or --force-handlers) still runs queued
+# handlers after the failure and defeats this restart prevention. Only common
+# lockout scenarios are detected and only provable lockouts fail the run, see
+# the run_sshd_config_access_check documentation.
 #
 # 'sshd -T -C user=...' (extended test mode) resolves Match blocks and prints the
-# effective directives for a hypothetical connection. The tasks below evaluate
-# that effective policy for the real Ansible connection account and abort BEFORE
-# the restart handler runs (the drop-in is written but sshd is not restarted, so
-# the current session survives) unless run_sshd_config_access_check is false.
+# effective directives for a hypothetical connection. When Ansible is connected
+# over SSH, the connection context (client address, server address and port) is
+# taken from the session's SSH_CONNECTION variable so source-dependent Match
+# blocks and 'user@host' patterns are evaluated against the real client;
+# otherwise localhost/127.0.0.1 is assumed.
 #
-# The connection account and its groups are read with 'become: false' so they
-# reflect the account that actually logs in via SSH (not a possible privilege
-# escalation target), while 'sshd -T' inherits the play's privileges as it needs
+# The connection account, its groups and the connection context are read with
+# 'become: false' so they reflect the account/session that actually logs in via
+# SSH (not a possible privilege escalation target, whose environment also lacks
+# SSH_CONNECTION), while 'sshd -T' inherits the play's privileges as it needs
 # to read host keys. In check mode the drop-in is not written, so the preflight
 # would evaluate the old config and is skipped.
 - name: "Config | Default | Access preflight"
@@ -268,6 +280,41 @@
       register: __run_sshd_preflight_conn_groups_raw
 
 
+    - name: "Config | Default | Access preflight | Determine the SSH connection context (unprivileged)"
+      # SSH_CONNECTION is "<client ip> <client port> <server ip> <server port>"
+      # in SSH sessions and absent for other connection plugins (containers,
+      # local). ansible.builtin.shell is used intentionally: expanding an
+      # environment variable of the login session needs a shell.
+      ansible.builtin.shell:
+        cmd: |
+          printf '%s' "${SSH_CONNECTION-}"
+      become: false
+      changed_when:
+        - false
+      check_mode: false
+      register: __run_sshd_preflight_conn_ctx_raw
+
+
+    - name: "Config | Default | Access preflight | Build the connection context for the policy evaluation"
+      ansible.builtin.set_fact:
+        # Client address the 'user@host' access-list patterns are matched
+        # against; empty when the connection context is unknown.
+        __run_sshd_preflight_client_addr: >-
+          {{ __run_sshd_preflight_ctx[0] if (__run_sshd_preflight_ctx_valid | ansible.builtin.bool) else '' }}
+        __run_sshd_preflight_conn_spec: >-
+          {{
+            ('user=' ~ __run_sshd_preflight_user
+             ~ ',host=' ~ __run_sshd_preflight_ctx[0] ~ ',addr=' ~ __run_sshd_preflight_ctx[0]
+             ~ ',laddr=' ~ __run_sshd_preflight_ctx[2] ~ ',lport=' ~ __run_sshd_preflight_ctx[3])
+            if (__run_sshd_preflight_ctx_valid | ansible.builtin.bool)
+            else ('user=' ~ __run_sshd_preflight_user ~ ',host=localhost,addr=127.0.0.1')
+          }}
+      vars:
+        __run_sshd_preflight_user: "{{ __run_sshd_preflight_conn_user_raw['stdout'] | ansible.builtin.trim }}"
+        __run_sshd_preflight_ctx: "{{ (__run_sshd_preflight_conn_ctx_raw['stdout'] | ansible.builtin.trim).split() }}"
+        __run_sshd_preflight_ctx_valid: "{{ (__run_sshd_preflight_ctx | ansible.builtin.length) == 4 }}"
+
+
     - name: "Config | Default | Access preflight | Evaluate the effective sshd policy for the connection account"
       ansible.builtin.command:
         argv:
@@ -276,7 +323,7 @@
           - "-f"
           - "{{ __run_sshd_config_service_file_path }}"
           - "-C"
-          - "user={{ __run_sshd_preflight_conn_user_raw['stdout'] | ansible.builtin.trim }},host=localhost,addr=127.0.0.1"
+          - "{{ __run_sshd_preflight_conn_spec }}"
       changed_when:
         - false
       check_mode: false
@@ -290,36 +337,70 @@
     # only when set (one value per line is possible), so tokens are gathered
     # across all matching lines. Access-list matching mirrors sshd's order
     # (DenyUsers, AllowUsers, DenyGroups, AllowGroups) and its glob semantics:
-    # a leading '!' negates, '*'/'?' are wildcards, and 'user@host' patterns are
-    # matched on the user part (the host part is approximated, see the block
-    # comment above).
+    # a leading '!' negates, '*'/'?' are wildcards, and the host part of
+    # 'user@host' patterns is matched against the real client address (when
+    # known from SSH_CONNECTION). Patterns whose host part cannot be evaluated
+    # (unknown context, DNS name based patterns) count as satisfied: only
+    # provable lockouts fail the run.
     - name: "Config | Default | Access preflight | Determine whether the effective policy would lock the connection account out"
       ansible.builtin.set_fact:
         __run_sshd_preflight_lockout_reasons: |-
-          {#- matches(name, plist): true when sshd would let 'name' pass access-list -#}
-          {#- 'plist' (its glob '*'/'?', '!' negation and 'user@host' semantics). A -#}
-          {#- negated pattern that matches forces "no match" (as in sshd), otherwise -#}
-          {#- any positive match yields a match. The '@host' part is dropped (matched -#}
-          {#- on the user/group token only, see the block comment above). -#}
-          {%- macro globs2re(plist) -%}
-          {{- plist
-              | ansible.builtin.map('ansible.builtin.regex_replace', '@.*$', '')
-              | ansible.builtin.map('ansible.builtin.regex_escape')
-              | ansible.builtin.map('ansible.builtin.replace', '\\*', '.*')
-              | ansible.builtin.map('ansible.builtin.replace', '\\?', '.')
-              | ansible.builtin.join('|') -}}
+          {#- glob2re(p): one sshd glob pattern ('*'/'?') as anchored-ready regex. -#}
+          {#- Note: backslash escape sequences are NOT collapsed in this Jinja -#}
+          {#- context, so '\*' below is exactly backslash + star (the sequence -#}
+          {#- regex_escape produces). -#}
+          {%- macro glob2re(p) -%}
+          {{- p | ansible.builtin.regex_escape
+               | ansible.builtin.replace('\*', '.*')
+               | ansible.builtin.replace('\?', '.') -}}
           {%- endmacro -%}
-          {%- macro matches(name, plist) -%}
-          {%-   set pos = plist | ansible.builtin.reject('ansible.builtin.match', '^!') | ansible.builtin.list -%}
-          {%-   set neg = plist | ansible.builtin.select('ansible.builtin.match', '^!')
-                  | ansible.builtin.map('ansible.builtin.regex_replace', '^!', '') | ansible.builtin.list -%}
-          {%-   set hitpos = (pos | ansible.builtin.length) > 0 and (name is ansible.builtin.regex('^(' ~ globs2re(pos) ~ ')$')) -%}
-          {%-   set hitneg = (neg | ansible.builtin.length) > 0 and (name is ansible.builtin.regex('^(' ~ globs2re(neg) ~ ')$')) -%}
-          {{- 'yes' if (hitpos and not hitneg) else 'no' -}}
+          {#- pat3(name, pat, addr): 'hit', 'maybe' or 'no' for one pattern (no '!'). -#}
+          {#- 'user@host' patterns hit when the user part matches AND the host part -#}
+          {#- matches the client address; an address-like host part that does not -#}
+          {#- match is 'no', an unevaluable one (no known address or a DNS name -#}
+          {#- pattern) is 'maybe'. -#}
+          {%- macro pat3(name, pat, addr) -%}
+          {%-   set up = pat.split('@', 1)[0] if '@' in pat else pat -%}
+          {%-   set hp = pat.split('@', 1)[1] if '@' in pat else '' -%}
+          {%-   if not (name is ansible.builtin.regex('^(' ~ glob2re(up) ~ ')$')) -%}
+          {{-     'no' -}}
+          {%-   elif hp == '' -%}
+          {{-     'hit' -}}
+          {%-   elif ((addr | ansible.builtin.length) > 0)
+                    and (addr is ansible.builtin.regex('^(' ~ glob2re(hp) ~ ')$')) -%}
+          {{-     'hit' -}}
+          {%-   elif ((addr | ansible.builtin.length) > 0)
+                    and (hp is ansible.builtin.regex('^[0-9A-Fa-f:.*?]+$')) -%}
+          {{-     'no' -}}
+          {%-   else -%}
+          {{-     'maybe' -}}
+          {%-   endif -%}
+          {%- endmacro -%}
+          {#- list3(name, plist, addr): "<pos>/<neg>" with 'hit'/'maybe'/'no' each, -#}
+          {#- aggregated over the positive and the '!'-negated patterns of a list. -#}
+          {%- macro list3(name, plist, addr) -%}
+          {%-   set st = namespace(pos='no', neg='no') -%}
+          {%-   for pat in plist -%}
+          {%-     set isneg = pat.startswith('!') -%}
+          {%-     set s = pat3(name, (pat[1:] if isneg else pat), addr) | ansible.builtin.trim -%}
+          {%-     if isneg -%}
+          {%-       if s == 'hit' -%}{%- set st.neg = 'hit' -%}
+          {%-       elif s == 'maybe' and st.neg == 'no' -%}{%- set st.neg = 'maybe' -%}
+          {%-       endif -%}
+          {%-     else -%}
+          {%-       if s == 'hit' -%}{%- set st.pos = 'hit' -%}
+          {%-       elif s == 'maybe' and st.pos == 'no' -%}{%- set st.pos = 'maybe' -%}
+          {%-       endif -%}
+          {%-     endif -%}
+          {%-   endfor -%}
+          {{- st.pos ~ '/' ~ st.neg -}}
           {%- endmacro -%}
           {%- set user = __run_sshd_preflight_conn_user_raw['stdout'] | ansible.builtin.trim -%}
           {%- set groups = (__run_sshd_preflight_conn_groups_raw['stdout'] | ansible.builtin.trim).split() -%}
-          {%- set ns = namespace(reasons=[], au=[], du=[], ag=[], dg=[], proot='', pk='', pw='', kbd='', gss='', ghit=false) -%}
+          {%- set addr = __run_sshd_preflight_client_addr | ansible.builtin.default('', true) -%}
+          {%- set ns = namespace(reasons=[], au=[], du=[], ag=[], dg=[], am=[],
+                                 proot='', pk='', pw='', kbd='', gss='', hb='',
+                                 ghit=false, amok=false) -%}
           {%- if __run_sshd_preflight_sshdt['rc'] != 0 -%}
           {%-   set _ = ns.reasons.append(
                   'the effective configuration could not be evaluated with "sshd -T" (rc='
@@ -334,28 +415,40 @@
           {%-       elif k == 'denyusers' -%}{%- set ns.du = ns.du + p[1:] -%}
           {%-       elif k == 'allowgroups' -%}{%- set ns.ag = ns.ag + p[1:] -%}
           {%-       elif k == 'denygroups' -%}{%- set ns.dg = ns.dg + p[1:] -%}
+          {%-       elif k == 'authenticationmethods' -%}{%- set ns.am = ns.am + p[1:] -%}
           {%-       elif k == 'permitrootlogin' -%}{%- set ns.proot = p[1] | ansible.builtin.lower -%}
           {%-       elif k == 'pubkeyauthentication' -%}{%- set ns.pk = p[1] | ansible.builtin.lower -%}
           {%-       elif k == 'passwordauthentication' -%}{%- set ns.pw = p[1] | ansible.builtin.lower -%}
           {%-       elif k == 'kbdinteractiveauthentication' -%}{%- set ns.kbd = p[1] | ansible.builtin.lower -%}
           {%-       elif k == 'gssapiauthentication' -%}{%- set ns.gss = p[1] | ansible.builtin.lower -%}
+          {%-       elif k == 'hostbasedauthentication' -%}{%- set ns.hb = p[1] | ansible.builtin.lower -%}
           {%-       endif -%}
           {%-     endif -%}
           {%-   endfor -%}
-          {#- Access lists, in sshd's evaluation order. -#}
-          {%-   if (matches(user, ns.du) | ansible.builtin.trim) == 'yes' -%}
+          {#- Access lists, in sshd's evaluation order. A deny only counts when -#}
+          {#- provable (definite positive hit, no definite or possible negation); -#}
+          {#- an allow list is satisfied by a definite or possible hit. -#}
+          {%-   set du = (list3(user, ns.du, addr) | ansible.builtin.trim).split('/') -%}
+          {%-   if du[0] == 'hit' and du[1] == 'no' -%}
           {%-     set _ = ns.reasons.append('DenyUsers matches the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
-          {%-   if (ns.au | ansible.builtin.length) > 0 and (matches(user, ns.au) | ansible.builtin.trim) == 'no' -%}
+          {%-   set au = (list3(user, ns.au, addr) | ansible.builtin.trim).split('/') -%}
+          {%-   if (ns.au | ansible.builtin.length) > 0 and (au[0] == 'no' or au[1] == 'hit') -%}
           {%-     set _ = ns.reasons.append('AllowUsers does not include the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
           {%-   set ns.ghit = false -%}
-          {%-   for g in groups -%}{%- if (matches(g, ns.dg) | ansible.builtin.trim) == 'yes' -%}{%- set ns.ghit = true -%}{%- endif -%}{%- endfor -%}
+          {%-   for g in groups -%}
+          {%-     set dg = (list3(g, ns.dg, addr) | ansible.builtin.trim).split('/') -%}
+          {%-     if dg[0] == 'hit' and dg[1] == 'no' -%}{%- set ns.ghit = true -%}{%- endif -%}
+          {%-   endfor -%}
           {%-   if ns.ghit -%}
           {%-     set _ = ns.reasons.append('DenyGroups matches a group of the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
           {%-   set ns.ghit = false -%}
-          {%-   for g in groups -%}{%- if (matches(g, ns.ag) | ansible.builtin.trim) == 'yes' -%}{%- set ns.ghit = true -%}{%- endif -%}{%- endfor -%}
+          {%-   for g in groups -%}
+          {%-     set ag = (list3(g, ns.ag, addr) | ansible.builtin.trim).split('/') -%}
+          {%-     if ag[0] != 'no' and ag[1] != 'hit' -%}{%- set ns.ghit = true -%}{%- endif -%}
+          {%-   endfor -%}
           {%-   if (ns.ag | ansible.builtin.length) > 0 and not ns.ghit -%}
           {%-     set _ = ns.reasons.append('AllowGroups does not include any group of the connection account "' ~ user ~ '"') -%}
           {%-   endif -%}
@@ -363,8 +456,36 @@
           {%-   if user == 'root' and ns.proot == 'no' -%}
           {%-     set _ = ns.reasons.append('PermitRootLogin is "no" and the connection account is root') -%}
           {%-   endif -%}
-          {%-   if ns.pk == 'no' and ns.pw == 'no' and ns.kbd == 'no' and ns.gss == 'no' -%}
-          {%-     set _ = ns.reasons.append('all authentication methods (pubkey, password, keyboard-interactive, GSSAPI) are disabled') -%}
+          {%-   if user == 'root' and ns.proot in ['prohibit-password', 'without-password'] and ns.pk == 'no' -%}
+          {%-     set _ = ns.reasons.append('PermitRootLogin "' ~ ns.proot
+                    ~ '" only permits public-key based root logins but PubkeyAuthentication is "no"') -%}
+          {%-   endif -%}
+          {%-   if user == 'root' and ns.proot == 'forced-commands-only' -%}
+          {%-     set _ = ns.reasons.append('PermitRootLogin is "forced-commands-only" and the connection account is root '
+                    ~ '(only keys with a forced command may log in, Ansible needs arbitrary commands)') -%}
+          {%-   endif -%}
+          {%-   if ns.pk == 'no' and ns.pw == 'no' and ns.kbd == 'no' and ns.gss == 'no' and ns.hb == 'no' -%}
+          {%-     set _ = ns.reasons.append('all authentication methods (pubkey, password, keyboard-interactive, GSSAPI, hostbased) are disabled') -%}
+          {%-   endif -%}
+          {#- AuthenticationMethods: every listed alternative (comma-joined methods -#}
+          {#- that must all succeed) has to survive the per-method toggles; unknown -#}
+          {#- method tokens count as available (only provable lockouts fail). -#}
+          {%-   set toggles = {'publickey': ns.pk, 'password': ns.pw, 'keyboard-interactive': ns.kbd,
+                               'gssapi-with-mic': ns.gss, 'gssapi-keyex': ns.gss, 'hostbased': ns.hb} -%}
+          {%-   if (ns.am | ansible.builtin.length) > 0 and ns.am != ['any'] -%}
+          {%-     set ns.amok = false -%}
+          {%-     for alt in ns.am -%}
+          {%-       set altns = namespace(sat=true) -%}
+          {%-       for m in alt.split(',') -%}
+          {%-         set mbase = (m.split(':') | ansible.builtin.first) | ansible.builtin.lower -%}
+          {%-         if (mbase in toggles) and (toggles[mbase] == 'no') -%}{%- set altns.sat = false -%}{%- endif -%}
+          {%-       endfor -%}
+          {%-       if altns.sat -%}{%- set ns.amok = true -%}{%- endif -%}
+          {%-     endfor -%}
+          {%-     if not ns.amok -%}
+          {%-       set _ = ns.reasons.append('no AuthenticationMethods alternative ('
+                      ~ (ns.am | ansible.builtin.join(' ')) ~ ') is satisfiable with the enabled authentication methods') -%}
+          {%-     endif -%}
           {%-   endif -%}
           {%- endif -%}
           {{ ns.reasons }}

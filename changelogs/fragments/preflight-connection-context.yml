@@ -1,0 +1,28 @@
+---
+
+minor_changes:
+  - >
+    ``run`` - the access-preservation preflight now evaluates the real SSH
+    connection context (client address, server address and port from the
+    session's ``SSH_CONNECTION`` variable) instead of always assuming
+    ``localhost``, so source-dependent ``Match`` blocks and the host part of
+    ``user@host`` access-list patterns are checked against the actual client.
+    It additionally detects unsatisfiable ``AuthenticationMethods``
+    combinations and root logins no enabled method can satisfy
+    (``prohibit-password`` with public keys disabled,
+    ``forced-commands-only``). Patterns that cannot be evaluated (unknown
+    source, DNS name based) count as satisfied - the preflight only fails on
+    provable lockouts.
+  - >
+    ``run`` - the ``run_sshd_config_access_check`` documentation now states
+    the exact best-effort contract - the drop-in is already written when the
+    check runs and is not rolled back, aborting only prevents the queued
+    restart under normal Ansible failure semantics, and
+    ``force_handlers``/``--force-handlers`` defeats this restart prevention.
+
+bugfixes:
+  - >
+    ``run`` - ``*``/``?`` wildcards in ``AllowUsers``/``AllowGroups``/
+    ``DenyUsers``/``DenyGroups`` patterns were never translated during the
+    access preflight evaluation (a broken escape sequence), so patterns
+    containing wildcards could produce wrong lockout verdicts.

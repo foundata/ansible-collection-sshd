@@ -94,24 +94,41 @@ run_sshd_service_settings: {}
 # - Default: 00-managed.conf
 run_sshd_config_service_dropin_file_name: "00-managed.conf"
 
-# If set to `true` (the default), the role runs an access-preservation preflight
-# (anti-lockout) before restarting the SSH daemon. It evaluates the effective
-# configuration (via `sshd -T`, including resolved `Match` blocks) for the
-# account Ansible is connected with and aborts the run *before* the restart
-# handler fires if that account would be locked out, for example by a
-# restrictive `AllowUsers`, `AllowGroups`, `DenyUsers`, `DenyGroups`,
-# `PermitRootLogin no` (when connecting as `root`), or by disabling every
-# authentication method.
+# If set to `true` (the default), the role runs a best-effort
+# access-preservation preflight (anti-lockout) before the SSH daemon gets
+# restarted. It evaluates the effective configuration (via `sshd -T`, including
+# resolved `Match` blocks) for the account Ansible is connected with and aborts
+# the run if that account would provably be locked out, for example by a
+# restrictive `AllowUsers`, `AllowGroups`, `DenyUsers`, `DenyGroups`, a
+# `PermitRootLogin` value the connection cannot satisfy (when connecting as
+# `root`), an unsatisfiable `AuthenticationMethods` combination, or by disabling
+# every authentication method.
 #
-# This guards against the common footgun of applying a syntactically valid but
-# too restrictive policy that locks you out on the next login. Set it to `false`
-# to bypass the safeguard (only advisable if you are certain you retain another
-# way to access the host, e.g. a console).
+# When Ansible is connected over SSH, the evaluation uses the real connection
+# context (client address, server address and port from the session's
+# `SSH_CONNECTION` variable), so source-dependent `Match` blocks and the host
+# part of `user@host` access-list patterns are checked against the actual
+# client. On other connection types `localhost`/`127.0.0.1` is assumed. Only the
+# common access-list glob semantics (`*`, `?`, `!`, `user@host`) are honored,
+# and patterns whose host part cannot be evaluated (unknown source, DNS name
+# based patterns) count as satisfied: the preflight only fails on lockouts it
+# can prove.
 #
-# Note: source-address-based `Match Address`/`Match Host` blocks are evaluated
-# against `localhost`/`127.0.0.1` (the connecting client address is not known to
-# the role), and only the common access-list glob semantics (`*`, `?`, `!`,
-# `user@host`) are honored.
+# Contract and limitations of this emergency hatch (it guards against common
+# footguns, it does not guarantee access):
+#
+# - The check runs *after* the managed drop-in has been written; the written
+#   configuration is not rolled back on failure.
+# - Aborting prevents the queued restart handler under normal Ansible failure
+#   semantics, so the running daemon keeps its previous configuration; a later
+#   manual restart or reboot would still apply the restrictive file.
+#   `force_handlers` (or `--force-handlers`) executes queued handlers even after
+#   a failure and defeats this restart prevention.
+# - Not detected: certificate/principal based restrictions, `authorized_keys`
+#   options, PAM or account restrictions, DNS name based patterns and similar.
+#
+# Set it to `false` to bypass the safeguard (only advisable if you are certain
+# you retain another way to access the host, e.g. a console).
 #
 # - Type: bool
 # - Required: No

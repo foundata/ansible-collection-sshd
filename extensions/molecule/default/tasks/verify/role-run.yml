@@ -28,7 +28,7 @@
     __testing_journalctl_executable: >-
       {{
         '/bin/journalctl'
-        if (ansible_facts['distribution'] == 'Debian' and (ansible_facts['distribution_major_version'] | ansible.builtin.int == 11))
+        if ((ansible_facts['distribution'] | ansible.builtin.lower) == 'debian' and (ansible_facts['distribution_major_version'] | ansible.builtin.int == 11))
         else '/usr/bin/journalctl'
       }}
 

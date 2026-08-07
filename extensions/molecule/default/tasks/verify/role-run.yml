@@ -249,6 +249,146 @@
     success_msg: "ssh-audit verified SSH config with no issues."
 
 
+## Key exchange negotiability (system client configuration)
+#
+# The container-based tests connect via "podman exec", so an sshd hardening
+# no real SSH client can negotiate stays invisible: the run that APPLIES it
+# still works over its established connection, only the next one is locked
+# out. This happened with an sntrup761-only KexAlgorithms default (clients
+# following the default RHEL 10 / Fedora 43/44 crypto-policies only offer
+# the MLKEM hybrid). The check below negotiates with the distribution's OWN ssh client
+# honoring the system-wide client configuration - deliberately without -F,
+# which would skip /etc/ssh/ssh_config and the crypto-policy include (and
+# make a manual test lie). Authentication is expected to fail (no key
+# material); only the key exchange matters: "Permission denied" means the
+# negotiation worked, "no matching key exchange" is the lockout.
+
+- name: "Molecule | Verify | KEX | Install the OpenSSH client"
+  ansible.builtin.package:
+    name: "{{ 'openssh-client' if ((ansible_facts['os_family'] | ansible.builtin.lower) == 'debian') else 'openssh-clients' }}"
+    state: "present"
+
+
+- name: "Molecule | Verify | KEX | Determine the client's effective key exchange offer"
+  ansible.builtin.command:
+    argv: ["ssh", "-G", "-p", "{{ __testing_configured_ssh_port }}", "localhost"]
+  register: __testing_kex_client_offer_raw
+  changed_when:
+    - false
+
+
+- name: "Molecule | Verify | KEX | Determine the server's effective key exchange list"
+  ansible.builtin.command:
+    argv: ["{{ __run_sshd_sshd_exec_path }}", "-T", "-f", "{{ __run_sshd_config_service_file_path }}"]
+  register: __testing_kex_server_raw
+  changed_when:
+    - false
+
+
+# The just-installed client comes from the same OpenSSH build as the server,
+# so its algorithm listing reveals whether this platform's sshd knows the
+# MLKEM hybrid (sshd itself has no -Q option).
+- name: "Molecule | Verify | KEX | List the key exchange algorithms of the local OpenSSH build"
+  ansible.builtin.command:
+    argv: ["ssh", "-Q", "kex"]
+  register: __testing_kex_binary_supported
+  changed_when:
+    - false
+
+
+- name: "Molecule | Verify | KEX | Compute the client offer, server list and their intersection"
+  ansible.builtin.set_fact:
+    __testing_kex_client_offer: >-
+      {{
+        (__testing_kex_client_offer_raw['stdout_lines'] | ansible.builtin.select('ansible.builtin.match', '^kexalgorithms ')
+         | ansible.builtin.first | ansible.builtin.regex_replace('^kexalgorithms ', '')).split(',')
+      }}
+    __testing_kex_server_list: >-
+      {{
+        (__testing_kex_server_raw['stdout_lines'] | ansible.builtin.select('ansible.builtin.match', '^kexalgorithms ')
+         | ansible.builtin.first | ansible.builtin.regex_replace('^kexalgorithms ', '')).split(',')
+      }}
+
+
+- name: "Molecule | Verify | KEX | Assert the effective server list matches the platform capability"
+  ansible.builtin.assert:
+    that:
+      # the classical-free hybrid every supported platform has
+      - "'sntrup761x25519-sha512@openssh.com' in __testing_kex_server_list"
+      # MLKEM exactly where the local OpenSSH build supports it - this trips
+      # when the static per-platform default (vars/debian_12.yml and friends)
+      # no longer matches reality, e.g. after a distribution rebase
+      - >-
+        ('mlkem768x25519-sha256' in __testing_kex_server_list)
+        == ('mlkem768x25519-sha256' in __testing_kex_binary_supported['stdout_lines'])
+    fail_msg: >-
+      The effective KexAlgorithms ({{ __testing_kex_server_list | ansible.builtin.join(',') }})
+      do not match the local OpenSSH build's capability
+      ({{ __testing_kex_binary_supported['stdout_lines'] | ansible.builtin.select('ansible.builtin.search', 'mlkem|sntrup') | ansible.builtin.join(',') }}).
+    success_msg: "The effective server KEX list matches the platform capability."
+
+
+- name: "Molecule | Verify | KEX | Notice when the distribution's client policy cannot negotiate at all"
+  ansible.builtin.debug:
+    msg: >-
+      The distribution's default SSH client configuration offers none of the
+      server's KEX algorithms (client: {{ __testing_kex_client_offer | ansible.builtin.join(',') }} -
+      server: {{ __testing_kex_server_list | ansible.builtin.join(',') }}); the live negotiation
+      check is skipped. This is expected on Enterprise Linux 9, whose DEFAULT
+      client crypto-policy contains no post-quantum KEX at all.
+  when:
+    - (__testing_kex_client_offer | ansible.builtin.intersect(__testing_kex_server_list) | ansible.builtin.length) == 0
+
+
+# The ssh-audit scan above trips the PerSourcePenalties mechanism of
+# OpenSSH >= 9.8: sshd then refuses new connections from the scanning source
+# ("kex_exchange_identification: read: Connection reset by peer"), which
+# would fail the negotiation attempt below for the wrong reason. A restart
+# clears the in-memory penalty state (container-verified: without it the
+# connection is closed at the banner, with it the attempt reaches
+# authentication).
+- name: "Molecule | Verify | KEX | Restart sshd to clear the penalty state left by the ssh-audit scan"
+  ansible.builtin.service:
+    name: "{{ __run_sshd_sshd_servicename }}"
+    state: "restarted"
+
+
+- name: "Molecule | Verify | KEX | Wait until sshd accepts connections again"
+  ansible.builtin.wait_for:
+    host: "127.0.0.1"
+    port: "{{ __testing_configured_ssh_port }}"
+    timeout: 30
+
+
+- name: "Molecule | Verify | KEX | Attempt a real SSH negotiation with the system client configuration"
+  ansible.builtin.command:
+    argv:
+      - "ssh"
+      - "-o"
+      - "BatchMode=yes"
+      - "-o"
+      - "StrictHostKeyChecking=no"
+      - "-o"
+      - "UserKnownHostsFile=/dev/null"
+      - "-o"
+      - "ConnectTimeout=15"
+      - "-p"
+      - "{{ __testing_configured_ssh_port }}"
+      - "root@localhost"
+      - "true"
+  register: __testing_kex_negotiation
+  changed_when:
+    - false
+  # an authentication failure is fine (no key material); anything that is
+  # neither success nor "Permission denied" - especially "no matching key
+  # exchange method" - is the lockout this check exists for
+  failed_when:
+    - __testing_kex_negotiation['rc'] != 0
+    - not (__testing_kex_negotiation['stderr'] is ansible.builtin.search('Permission denied'))
+  when:
+    - (__testing_kex_client_offer | ansible.builtin.intersect(__testing_kex_server_list) | ansible.builtin.length) > 0
+
+
 # OS-specific overwrite verification (text-based)
 # Ensures that any key defined in __run_sshd_service_settings_overwrite does not
 # appear as an active directive in the sshd_config file content.

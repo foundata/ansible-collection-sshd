@@ -167,9 +167,30 @@ __run_sshd_service_settings_defaults:
   # - https://infosec.mozilla.org/guidelines/openssh
   # - https://stribika.github.io/2015/01/04/secure-secure-shell.html
   # - https://ssh-comparison.quendi.de/comparison/cipher.html
-  KexAlgorithms: "sntrup761x25519-sha512@openssh.com"
+  #
+  # KEX: both post-quantum hybrids. Clients following the default
+  # crypto-policies of RHEL 10 and Fedora 43/44 (as of 2026-08) offer only
+  # the MLKEM hybrid (no sntrup761), so an
+  # sntrup761-only server locks such clients (e.g. the Ansible controller)
+  # out on the run AFTER the hardening was applied - the run that applies it
+  # still works over its established connection. Platforms whose sshd does
+  # not know mlkem768x25519-sha256 yet (needs OpenSSH >= 9.9) override
+  # __run_sshd_kex_default in their vars file; a user-supplied KexAlgorithms
+  # value is used as-is.
+  KexAlgorithms: "{{ __run_sshd_kex_default }}"
   Ciphers: "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr"
   MACs: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com"
+
+
+# Default KEX algorithm list (see the KexAlgorithms comment above). Platforms
+# with OpenSSH < 9.9 do not support the MLKEM hybrid and override this in
+# their OS-specific vars file (vars/debian_12.yml, vars/ubuntu_22.yml,
+# vars/ubuntu_24.yml). Deliberately a dedicated variable and NOT
+# __run_sshd_service_settings_overwrite: that mechanism also overrides a
+# user-supplied KexAlgorithms value, but only the role DEFAULT has to lose
+# the MLKEM entry there - the option itself (and e.g. a user-chosen list
+# with classical fallbacks) is valid on those platforms.
+__run_sshd_kex_default: "mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com"
 
 
 # Special variable intended to be overridden in OS-specific variable files.

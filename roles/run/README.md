@@ -124,7 +124,7 @@ The following variables can be configured for this role:
 | `run_sshd_state` | `str` | No | `"present"` | Determines whether the managed resources should be `present` or `absent`.<br><br>`present` ensures that required components, such as software packages, are installed and configured.<br><br>`absent` reverts changes as much as possible, such as […](#variable-run_sshd_state) |
 | `run_sshd_autoupgrade` | `bool` | No | `false` | If set to `true`, all managed packages will be upgraded during each Ansible run (e.g., when the package provider detects a newer version than the currently installed one). |
 | `run_sshd_service_state` | `str` | No | `"enabled"` | Defines the status of the service(s).<br><br>`enabled`: Service is running and will start automatically at boot.<br><br>`disabled`: Service is stopped and will not start automatically at boot.<br><br>`running` Service is running but will not start […](#variable-run_sshd_service_state) |
-| `run_sshd_service_settings` | `dict` | No | `{}` | sshd service configuration values (additional ones or to overwrite defaults; see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).<br><br>Simply use standard SSH option names as keys with their corresponding values. Special […](#variable-run_sshd_service_settings) |
+| `run_sshd_service_settings` | `dict` | No | `{}` | sshd service configuration values (additional ones or to overwrite defaults; see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).<br><br>Note on the default `KexAlgorithms`: it lists both post-quantum hybrids […](#variable-run_sshd_service_settings) |
 | `run_sshd_config_service_dropin_file_name` | `str` | No | `"00-managed.conf"` | Filename of the drop-in configuration file to be placed in `/etc/ssh/sshd_config.d`. Defaults to `00-managed.conf`. The `00-` prefix ensures early loading and thus higher precedence over files with higher-numbered prefixes.<br><br>If a non-default […](#variable-run_sshd_config_service_dropin_file_name) |
 | `run_sshd_config_access_check` | `bool` | No | `true` | If set to `true` (the default), the role runs a best-effort access-preservation preflight (anti-lockout) before the SSH daemon gets restarted. It evaluates the effective configuration (via `sshd -T`, including resolved `Match` blocks) for the account […](#variable-run_sshd_config_access_check) |
 
@@ -196,6 +196,15 @@ status applies to all services if multiple are being managed by this role.
 
 sshd service configuration values (additional ones or to overwrite defaults;
 see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).
+
+Note on the default `KexAlgorithms`: it lists both post-quantum
+hybrids (`mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com`).
+Clients following the default crypto-policies of RHEL 10 and
+Fedora 43/44 (as of 2026-08) offer only the MLKEM hybrid, so an
+sntrup761-only server would lock them out. Platforms whose OpenSSH is older than 9.9 do not support the
+MLKEM hybrid and get a default without it (see the OS-specific
+files in `vars/`, e.g. `vars/debian_12.yml`). A `KexAlgorithms`
+value you set yourself is used as-is on every platform.
 
 Simply use standard SSH option names as keys with their corresponding values.
 Special cases:

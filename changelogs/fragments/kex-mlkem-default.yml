@@ -1,0 +1,13 @@
+---
+
+bugfixes:
+  - >-
+    run: the hardened `KexAlgorithms` default listed only the
+    `sntrup761x25519-sha512@openssh.com` hybrid. Clients following the default
+    crypto-policies of RHEL 10 and Fedora 43/44 offer only the MLKEM hybrid,
+    so such clients (including an Ansible controller) were locked out on the run after
+    the hardening was applied. The default now offers
+    `mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com`; platforms
+    whose OpenSSH is older than 9.9 (Debian 12, Ubuntu 22.04/24.04) keep a
+    default without the MLKEM hybrid via their OS-specific vars files. A
+    user-supplied `KexAlgorithms` value is used as-is on every platform.

@@ -57,6 +57,15 @@ run_sshd_service_state: "enabled"
 # sshd service configuration values (additional ones or to overwrite defaults;
 # see `__run_sshd_service_settings_defaults` in `vars/main.yml` for them).
 #
+# Note on the default `KexAlgorithms`: it lists both post-quantum hybrids
+# (`mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com`). Clients
+# following the default crypto-policies of RHEL 10 and Fedora 43/44 (as of
+# 2026-08) offer only the MLKEM hybrid, so an sntrup761-only server would lock
+# them out. Platforms whose OpenSSH is older than 9.9 do not support the MLKEM
+# hybrid and get a default without it (see the OS-specific files in `vars/`,
+# e.g. `vars/debian_12.yml`). A `KexAlgorithms` value you set yourself is used
+# as-is on every platform.
+#
 # Simply use standard SSH option names as keys with their corresponding values.
 # Special cases:
 #

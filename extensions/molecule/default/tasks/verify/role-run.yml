@@ -132,11 +132,31 @@
 # which caused empty strings to enter the options list. When joined with '|',
 # this created patterns like 'Port||HostKey' where '||' matches empty strings,
 # causing every line to be re-commented on each run (adding '#' repeatedly).
+# Self-test first: the detection expression must actually catch a planted
+# double-commented line, otherwise the regression assert below is vacuous
+# (a broken line split once made it match nothing at all).
+- name: "Molecule | Verify | Self-test the double-comment detection with a planted fixture"
+  ansible.builtin.assert:
+    that:
+      - >-
+        (('# first' ~ __testing_nl ~ '##Port 22' ~ __testing_nl ~ 'Port 22').splitlines()
+         | ansible.builtin.select('ansible.builtin.match', '^##')
+         | ansible.builtin.length) == 1
+    fail_msg: "The double-comment detection does not catch a planted '##' line; the regression assert below would be vacuous."
+    success_msg: "The double-comment detection catches a planted '##' line."
+  vars:
+    # YAML (not Jinja) escape processing yields the real newline character.
+    __testing_nl: "\n"
+
+
 - name: "Molecule | Verify | Check for double-commented lines in sshd_config"
+  # splitlines() on purpose: split('\n') never splits real newlines in this
+  # Jinja context (escape sequences are not collapsed), which made this check
+  # match nothing at all.
   ansible.builtin.set_fact:
     __testing_double_commented_lines: >-
-      {{ (__testing_sshd_config_content).split('\n')
-         | ansible.builtin.select('match', '^##')
+      {{ (__testing_sshd_config_content).splitlines()
+         | ansible.builtin.select('ansible.builtin.match', '^##')
          | ansible.builtin.list }}
 
 

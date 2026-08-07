@@ -4,6 +4,38 @@ foundata.sshd Ansible collection Release Notes
 
 .. contents:: Topics
 
+v3.0.1
+======
+
+Release Summary
+---------------
+
+Release Date: 2026-08-08
+
+Bugfix release.
+
+Minor Changes
+-------------
+
+- The Molecule ``default`` scenario now selects the test backend per platform via a ``type`` key: ``podman`` (container, the default when omitted) or ``libvirt`` (QEMU/KVM virtual machine from a vendor cloud image via a session libvirt daemon, without root privileges). VM platforms allow tests containers cannot cover; commented ``libvirt`` alternates for every platform are included in ``molecule.yml``. ``molecule login`` now works through a per-instance login command for both backends. See ``extensions/molecule/README.md`` for requirements and usage.
+- ``run`` - the ``run_sshd_config_access_check`` documentation now states the exact best-effort contract - the drop-in is already written when the check runs and is not rolled back, aborting only prevents the queued restart under normal Ansible failure semantics, and ``force_handlers``/``--force-handlers`` defeats this restart prevention.
+- ``run`` - the access-preservation preflight now evaluates the real SSH connection context (client address, server address and port from the session's ``SSH_CONNECTION`` variable) instead of always assuming ``localhost``, so source-dependent ``Match`` blocks and the host part of ``user@host`` access-list patterns are checked against the actual client. It additionally detects unsatisfiable ``AuthenticationMethods`` combinations and root logins no enabled method can satisfy (``prohibit-password`` with public keys disabled, ``forced-commands-only``). Patterns that cannot be evaluated (unknown source, DNS name based) count as satisfied - the preflight only fails on provable lockouts.
+
+Security Fixes
+--------------
+
+- ``run`` role - ``run_sshd_config_service_dropin_file_name`` is now validated to be a plain filename ending in ``.conf``. A value containing path separators (such as ``../sshd_config``) could previously make the role write to or remove files outside of ``/etc/ssh/sshd_config.d/`` with root privileges, and any suffix other than ``.conf`` is silently ignored by the stock ``sshd_config`` include directive.
+
+Bugfixes
+--------
+
+- ``run`` - ``*``/``?`` wildcards in ``AllowUsers``/``AllowGroups``/ ``DenyUsers``/``DenyGroups`` patterns were never translated during the access preflight evaluation (a broken escape sequence), so patterns containing wildcards could produce wrong lockout verdicts.
+- ``run`` role - Platform-specific task files are now guaranteed to run before the shared default tasks. The former single include loop did not preserve that order with several platforms in one play: Ansible batches the includes across hosts and the insertion order depends on when results arrive (non-deterministic), so default tasks could run before platform-specific ones. The includes are now two sequential tasks, which is a hard ordering barrier.
+- ``run`` role - The documentation of the ``unmanaged`` service state falsely claimed the service "will not start at boot". The role leaves the service completely alone in this state: both the running state and the boot (enablement) state stay exactly as they are. The description now documents the real behavior.
+- ``run`` role - ``state: absent`` now removes the OpenSSH server package on SUSE platforms. A variable name typo (``run_sshd_packages_install`` instead of ``__run_sshd_packages_install``) left the uninstall package list undefined there, so the package removal was silently skipped.
+- boolean role arguments are now coerced with ``ansible.builtin.bool`` in every conditional expression. String values, as delivered by ``-e var=false`` command line extra-vars, were evaluated by truthiness before, so ``"false"`` enabled the gated behavior instead of disabling it.
+- run: the hardened `KexAlgorithms` default listed only the `sntrup761x25519-sha512@openssh.com` hybrid. Clients following the default crypto-policies of RHEL 10 and Fedora 43/44 offer only the MLKEM hybrid, so such clients (including an Ansible controller) were locked out on the run after the hardening was applied. The default now offers `mlkem768x25519-sha256,sntrup761x25519-sha512@openssh.com`; platforms whose OpenSSH is older than 9.9 (Debian 12, Ubuntu 22.04/24.04) keep a default without the MLKEM hybrid via their OS-specific vars files. A user-supplied `KexAlgorithms` value is used as-is on every platform.
+
 v3.0.0
 ======
 

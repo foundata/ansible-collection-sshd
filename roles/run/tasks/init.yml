@@ -122,10 +122,12 @@
   ansible.builtin.include_vars:
     file: "{{ __run_sshd_vars_file }}"
   vars:
-    __run_sshd_vars_file: "{{ role_path }}/vars/{{ item }}"
+    __run_sshd_vars_file: "{{ role_path }}/vars/{{ __run_sshd_varsfile_item }}"
   when:
     - __run_sshd_vars_file is ansible.builtin.file
   loop: "{{ __run_sshd_platform_filenames_most_specific_last }}"
+  loop_control:
+    loop_var: "__run_sshd_varsfile_item"
 
 
 ### SSHD specific

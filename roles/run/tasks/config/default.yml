@@ -14,8 +14,10 @@
 
 - name: "Config | Default | Check if all configured host keys exist"
   ansible.builtin.stat:
-    path: "{{ item }}"
+    path: "{{ __run_sshd_hostkey_item }}"
   loop: "{{ __run_sshd_configured_hostkeys }}"
+  loop_control:
+    loop_var: "__run_sshd_hostkey_item"
   register: __run_sshd_hostkey_stats
 
 
@@ -122,9 +124,11 @@
 
 - name: "Config | Default | Get contents of drop-in service config files"
   ansible.builtin.slurp:
-    src: "{{ item }}"
+    src: "{{ __run_sshd_dropin_file_item }}"
   register: __run_sshd_slurp_sshd_configd_result
   loop: "{{ __run_sshd_find_sshd_configd_result['files'] | ansible.builtin.map(attribute='path') }}"
+  loop_control:
+    loop_var: "__run_sshd_dropin_file_item"
   when:
     - __run_sshd_find_sshd_configd_result is ansible.builtin.defined
     - __run_sshd_find_sshd_configd_result['files'] is ansible.builtin.defined

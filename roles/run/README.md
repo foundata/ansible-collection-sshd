@@ -1,5 +1,10 @@
 # Ansible role: `foundata.sshd.run`
 
+<!--
+SPDX-FileCopyrightText: foundata GmbH <https://foundata.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 The `foundata.sshd.run` Ansible role (part of the `foundata.sshd` Ansible collection). It provides automated configuration management of `sshd`, implementing security best practices by default across major platforms.
 
 
